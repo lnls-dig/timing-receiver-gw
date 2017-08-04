@@ -4,3 +4,6 @@
 [submodule "hdl/ip_cores/wr-cores"]
 	path = hdl/ip_cores/wr-cores
 	url = https://github.com/lnls-dig/wr-cores
+[submodule "hdl/ip_cores/general-cores"]
+	path = hdl/ip_cores/general-cores
+	url = https://github.com/lnls-dig/general-cores
