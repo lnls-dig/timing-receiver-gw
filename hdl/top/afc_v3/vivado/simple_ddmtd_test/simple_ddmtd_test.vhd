@@ -738,17 +738,17 @@ begin
 
   cmp_ibufds_gte2_20m_vcxo : IBUFDS_GTE2
   port map (
-    O     => clk_20m_vcxo_ibufds,
-    ODIV2 => open,
-    I     => clk_20m_vcxo_p_i,
-    IB    => clk_20m_vcxo_n_i,
-    CEB   => '0'
+    O                                       => clk_20m_vcxo_ibufds,
+    ODIV2                                   => open,
+    I                                       => clk_20m_vcxo_p_i,
+    IB                                      => clk_20m_vcxo_n_i,
+    CEB                                     => '0'
   );
 
   cmp_gte2_2m_vcxo_bufg : BUFG
   port map(
-    O                                   => clk_20m_vcxo_bufg,
-    I                                   => clk_20m_vcxo_ibufds
+    O                                       => clk_20m_vcxo_bufg,
+    I                                       => clk_20m_vcxo_ibufds
   );
 
    -- Obtain core locking and generate necessary clocks
@@ -1186,41 +1186,41 @@ begin
   trig_ref_rst_n <= clk_sys_rstn;
 
   cmp_xwb_trigger : xwb_trigger
-    generic map (
-      g_address_granularity                => BYTE,
-      g_interface_mode                     => PIPELINED,
-      g_sync_edge                          => c_trig_sync_edge,
-      g_trig_num                           => c_trig_trig_num,
-      g_intern_num                         => c_trig_intern_num,
-      g_rcv_intern_num                     => c_trig_rcv_intern_num,
-      g_num_mux_interfaces                 => c_trig_num_mux_interfaces,
-      g_out_resolver                       => c_trig_out_resolver,
-      g_in_resolver                        => c_trig_in_resolver,
-      g_with_input_sync                    => c_trig_with_input_sync,
-      g_with_output_sync                   => c_trig_with_output_sync
-    )
-    port map (
-      clk_i                                => clk_sys,
-      rst_n_i                              => clk_sys_rstn,
+  generic map (
+    g_address_granularity                     => BYTE,
+    g_interface_mode                          => PIPELINED,
+    g_sync_edge                               => c_trig_sync_edge,
+    g_trig_num                                => c_trig_trig_num,
+    g_intern_num                              => c_trig_intern_num,
+    g_rcv_intern_num                          => c_trig_rcv_intern_num,
+    g_num_mux_interfaces                      => c_trig_num_mux_interfaces,
+    g_out_resolver                            => c_trig_out_resolver,
+    g_in_resolver                             => c_trig_in_resolver,
+    g_with_input_sync                         => c_trig_with_input_sync,
+    g_with_output_sync                        => c_trig_with_output_sync
+  )
+  port map (
+    clk_i                                     => clk_sys,
+    rst_n_i                                   => clk_sys_rstn,
 
-      ref_clk_i                            => trig_ref_clk,
-      ref_rst_n_i                          => trig_ref_rst_n,
+    ref_clk_i                                 => trig_ref_clk,
+    ref_rst_n_i                               => trig_ref_rst_n,
 
-      fs_clk_array_i                       => fs_clk_array,
-      fs_rst_n_array_i                     => fs_rst_n_array,
+    fs_clk_array_i                            => fs_clk_array,
+    fs_rst_n_array_i                          => fs_rst_n_array,
 
-      wb_slv_trigger_iface_i               => cbar_master_o(c_slv_trig_iface_id),
-      wb_slv_trigger_iface_o               => cbar_master_i(c_slv_trig_iface_id),
+    wb_slv_trigger_iface_i                    => cbar_master_o(c_slv_trig_iface_id),
+    wb_slv_trigger_iface_o                    => cbar_master_i(c_slv_trig_iface_id),
 
-      wb_slv_trigger_mux_i                 => trig_core_slave_i,
-      wb_slv_trigger_mux_o                 => trig_core_slave_o,
+    wb_slv_trigger_mux_i                      => trig_core_slave_i,
+    wb_slv_trigger_mux_o                      => trig_core_slave_o,
 
-      trig_dir_o                           => trig_dir_int,
-      trig_rcv_intern_i                    => trig_rcv_intern,
-      trig_pulse_transm_i                  => trig_pulse_transm,
-      trig_pulse_rcv_o                     => trig_pulse_rcv,
-      trig_b                               => trig_b,
-      trig_dbg_o                           => trig_dbg
+    trig_dir_o                                => trig_dir_int,
+    trig_rcv_intern_i                         => trig_rcv_intern,
+    trig_pulse_transm_i                       => trig_pulse_transm,
+    trig_pulse_rcv_o                          => trig_pulse_rcv,
+    trig_b                                    => trig_b,
+    trig_dbg_o                                => trig_dbg
   );
 
   trig_core_slave_i <= cbar_master_o(c_slv_trig_mux_1_id) &
