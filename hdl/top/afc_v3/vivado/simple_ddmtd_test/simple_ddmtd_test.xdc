@@ -55,8 +55,8 @@ set_property IOSTANDARD LVCMOS25 [get_ports afc_si57x_scl_b]
 set_property PACKAGE_PIN W24 [get_ports afc_si57x_sda_b]
 set_property IOSTANDARD LVCMOS25 [get_ports afc_si57x_sda_b]
 # IO_0_13
-set_property PACKAGE_PIN AD23 [get_ports clk_afc_si57x_oe_o]
-set_property IOSTANDARD LVCMOS25 [get_ports clk_afc_si57x_oe_o]
+set_property PACKAGE_PIN AD23 [get_ports afc_si57x_oe_o]
+set_property IOSTANDARD LVCMOS25 [get_ports afc_si57x_oe_o]
 
 #######################################################################
 ##                           Trigger	                             ##
