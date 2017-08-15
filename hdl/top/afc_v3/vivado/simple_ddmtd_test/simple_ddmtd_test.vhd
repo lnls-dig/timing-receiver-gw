@@ -822,8 +822,8 @@ begin
   port map (
     O                                       => clk_afc_si57x_ibufds,
     ODIV2                                   => open,
-    I                                       => clk_afc_si57x_n_i,
-    IB                                      => clk_afc_si57x_p_i,
+    I                                       => clk_afc_si57x_p_i,
+    IB                                      => clk_afc_si57x_n_i,
     CEB                                     => '0'
   );
 
