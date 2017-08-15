@@ -519,10 +519,11 @@ architecture rtl of simple_ddmtd_test is
   ---------------------------
   --      Components       --
   ---------------------------
-  component ila_0
+
+  component ila_4096_depth_64_width
   port (
-  	clk : in std_logic;
-  	probe0 : in std_logic_vector(63 downto 0)
+    clk                                     : in std_logic;
+    probe0                                  : in std_logic_vector(63 downto 0)
   );
   end component;
 
@@ -1245,7 +1246,7 @@ begin
   ----------------------------------------------------------------------
   --                            Analyser                              --
   ----------------------------------------------------------------------
-  cmp_vivado_ila : ila_0
+  cmp_vivado_ila : ila_4096_depth_64_width
   port map (
   	clk    => clk_sys,
   	probe0 => trig_ila0_probe
