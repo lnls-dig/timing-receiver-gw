@@ -17,6 +17,10 @@ set_property IN_TERM UNTUNED_SPLIT_50 [get_ports sys_clk_n_i]
 set_property PACKAGE_PIN AH18 [get_ports clk_20m_vcxo_n_i]
 # MGT213_CLK1_P
 set_property PACKAGE_PIN AG18 [get_ports clk_20m_vcxo_p_i]
+# MGT116_CLK1_N
+set_property PACKAGE_PIN G14 [get_ports clk_afc_si57x_n_i]
+# MGT116_CLK1_P
+set_property PACKAGE_PIN H14 [get_ports clk_afc_si57x_p_i]
 
 # TXD		IO_25_34
 set_property PACKAGE_PIN AB11 [get_ports rs232_txd_o]
@@ -42,6 +46,17 @@ set_property IOSTANDARD LVCMOS25 [get_ports {leds_o[1]}]
 # Led Blue - IO_0_36
 set_property PACKAGE_PIN H12 [get_ports {leds_o[0]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {leds_o[0]}]
+
+# AFC Si57x
+# IO_0_14
+set_property PACKAGE_PIN V24 [get_ports afc_si57x_scl_b]
+set_property IOSTANDARD LVCMOS25 [get_ports afc_si57x_scl_b]
+# IO_25_14
+set_property PACKAGE_PIN W24 [get_ports afc_si57x_sda_b]
+set_property IOSTANDARD LVCMOS25 [get_ports afc_si57x_sda_b]
+# IO_0_13
+set_property PACKAGE_PIN AD23 [get_ports clk_afc_si57x_oe_o]
+set_property IOSTANDARD LVCMOS25 [get_ports clk_afc_si57x_oe_o]
 
 #######################################################################
 ##                           Trigger	                             ##
@@ -868,6 +883,9 @@ set_property PACKAGE_PIN C18 [get_ports {pci_exp_rxn_i[3]}]
 
 # 125 MHz AMC TCLKB input clock
 create_clock -period 8.000 -name sys_clk_p_i [get_ports sys_clk_p_i]
+
+# 125 MHz Si57x input clock
+create_clock -period 8.000 -name sys_clk_p_i [get_ports clk_afc_si57x_p_i]
 
 # Create generated clocks from SYS PLL/MMCM
 create_generated_clock -name clk_sys    [get_pins -hier -filter {NAME =~ *cmp_pll_sys_inst/cmp_sys_pll/CLKOUT0}]

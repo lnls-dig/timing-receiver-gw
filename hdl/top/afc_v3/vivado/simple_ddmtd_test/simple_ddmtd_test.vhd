@@ -60,6 +60,15 @@ port(
   clk_20m_vcxo_p_i                           : in std_logic;
   clk_20m_vcxo_n_i                           : in std_logic;
 
+  -- Si57x clock
+  clk_afc_si57x_p_i                          : in std_logic;
+  clk_afc_si57x_n_i                          : in std_logic;
+
+  -- Si57x I2C/OE
+  afc_si57x_sda_b                            : inout std_logic;
+  afc_si57x_scl_b                            : inout std_logic;
+  afc_si57x_oe_o                             : out std_logic;
+
   -----------------------------------------
   -- Reset Button
   -----------------------------------------
@@ -161,9 +170,10 @@ architecture rtl of simple_ddmtd_test is
 
   -- Top crossbar layout
   -- Number of slaves
-  constant c_slaves                         : natural := 12;
+  constant c_slaves                         : natural := 13;
   -- Acq_Core 1, Acq_Core 2,
   -- TRIG Iface, TRIG MUX 1, TRIG MUX 2,
+  -- FMC active clock
   -- Peripherals, AFC diagnostics,
   -- Repo URL, SDB synthesis top, general-cores, infra-cores, wr-cores
 
@@ -175,11 +185,12 @@ architecture rtl of simple_ddmtd_test is
   constant c_slv_trig_iface_id              : natural := 4;
   constant c_slv_trig_mux_0_id              : natural := 5;
   constant c_slv_trig_mux_1_id              : natural := 6;
-  constant c_slv_sdb_repo_url_id            : natural := 7;
-  constant c_slv_sdb_top_syn_id             : natural := 8;
-  constant c_slv_sdb_gen_cores_id           : natural := 9;
-  constant c_slv_sdb_infra_cores_id         : natural := 10;
-  constant c_slv_sdb_wr_cores_id            : natural := 11;
+  constant c_slv_active_clk_id              : natural := 7;
+  constant c_slv_sdb_repo_url_id            : natural := 8;
+  constant c_slv_sdb_top_syn_id             : natural := 9;
+  constant c_slv_sdb_gen_cores_id           : natural := 10;
+  constant c_slv_sdb_infra_cores_id         : natural := 11;
+  constant c_slv_sdb_wr_cores_id            : natural := 12;
 
   -- Number of masters
   constant c_masters                        : natural := 2;            -- RS232-Syscon, PCIe
@@ -290,6 +301,9 @@ architecture rtl of simple_ddmtd_test is
   -- General peripherals layout. UART, LEDs (GPIO), Buttons (GPIO) and Tics counter
   constant c_periph_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
 
+  -- FMC active clock. Si57x + AD9510
+  constant c_fmc_active_clk_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000300");
+
   -- WB SDB (Self describing bus) layout
   constant c_layout : t_sdb_record_array(c_slaves-1 downto 0) :=
   (
@@ -300,6 +314,8 @@ architecture rtl of simple_ddmtd_test is
      c_slv_trig_iface_id       => f_sdb_embed_device(c_xwb_trigger_iface_sdb,    x"00390000"),   -- Trigger Interface port
      c_slv_trig_mux_0_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00400000"),   -- Trigger Mux 1 port
      c_slv_trig_mux_1_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00410000"),   -- Trigger Mux 2 port
+     c_slv_active_clk_id       => f_sdb_embed_bridge(c_fmc_active_clk_bridge_sdb,
+                                                                                 x"00420000"),   -- FMC Active clock
      c_slv_sdb_repo_url_id     => f_sdb_embed_repo_url(c_sdb_repo_url),
      c_slv_sdb_top_syn_id      => f_sdb_embed_synthesis(c_sdb_top_syn_info),
      c_slv_sdb_gen_cores_id    => f_sdb_embed_synthesis(c_sdb_general_cores_syn_info),
@@ -419,6 +435,10 @@ architecture rtl of simple_ddmtd_test is
   signal dmtd_clk_gen                       : std_logic;
   signal clk_20m_vcxo_ibufds                : std_logic;
   signal clk_20m_vcxo_bufg                  : std_logic;
+
+  signal clk_afc_si57x_ibufds               : std_logic;
+  signal clk_afc_si57x_bufg                 : std_logic;
+  signal clk_afc_si57x                      : std_logic;
 
   -- FS clocks
   signal fs_clk_array                       : std_logic_vector(c_acq_num_cores-1 downto 0);
@@ -795,6 +815,27 @@ begin
   clk_dmtd_div2_rst                         <=  not(reset_rstn_dmtd(c_clk_dmtd_div2_id));
 
   ----------------------------------------------------------------------
+  --                      Si57x Clock generation                      --
+  ----------------------------------------------------------------------
+
+  cmp_ibufds_gte2_si57x : IBUFDS_GTE2
+  port map (
+    O                                       => clk_afc_si57x_ibufds,
+    ODIV2                                   => open,
+    I                                       => clk_afc_si57x_n_i,
+    IB                                      => clk_afc_si57x_p_i,
+    CEB                                     => '0'
+  );
+
+  cmp_gte2_si57x_bufg : BUFG
+  port map(
+    O                                       => clk_afc_si57x_bufg,
+    I                                       => clk_afc_si57x_ibufds
+  );
+
+  clk_afc_si57x <= clk_afc_si57x_bufg;
+
+  ----------------------------------------------------------------------
   --                        Wishbone Modules                          --
   ----------------------------------------------------------------------
 
@@ -1012,7 +1053,7 @@ begin
     -- system clock
     clk_sys_i                              => clk_sys,
     -- Input clocks
-    clk_a_i                                => clk_sys,
+    clk_a_i                                => clk_afc_si57x,
     clk_b_i                                => clk_sys,
     clk_dmtd_i                             => clk_dmtd,
 
@@ -1242,6 +1283,64 @@ begin
   trig_rcv_intern(c_trig_mux_1_id, c_trig_rcv_intern_chan_2_id) <= trig_fmc2_channel_2;
 
   trig_dir_o <= trig_dir_int;
+
+  ----------------------------------------------------------------------
+  --                            Active Clock                          --
+  ----------------------------------------------------------------------
+
+  cmp_fmc_active_clk : xwb_fmc_active_clk
+  generic map(
+    g_address_granularity                    => BYTE,
+    g_interface_mode                         => PIPELINED,
+    g_with_extra_wb_reg                      => false
+  )
+  port map (
+    sys_clk_i                                => clk_sys,
+    sys_rst_n_i                              => clk_sys_rstn,
+
+    -----------------------------
+    -- Wishbone Control Interface signals
+    -----------------------------
+
+    wb_slv_i                                 => cbar_master_o(c_slv_active_clk_id),
+    wb_slv_o                                 => cbar_master_i(c_slv_active_clk_id),
+
+    -----------------------------
+    -- External ports
+    -----------------------------
+
+    -- Si571 clock gen
+    si571_scl_pad_b                          => afc_si57x_scl_b,
+    si571_sda_pad_b                          => afc_si57x_sda_b,
+    fmc_si571_oe_o                           => afc_si57x_oe_o,
+
+    -- AD9510 clock distribution PLL
+    spi_ad9510_cs_o                          => open,
+    spi_ad9510_sclk_o                        => open,
+    spi_ad9510_mosi_o                        => open,
+    spi_ad9510_miso_i                        => '0',
+
+    fmc_pll_function_o                       => open,
+    fmc_pll_status_i                         => '0',
+
+    -- AD9510 clock copy
+    fmc_fpga_clk_p_i                         => '0',
+    fmc_fpga_clk_n_i                         => '1',
+
+    -- Clock reference selection (TS3USB221)
+    fmc_clk_sel_o                            => open,
+
+    -----------------------------
+    -- General ADC output signals and status
+    -----------------------------
+
+    -- General board status
+    fmc_pll_status_o                         => open,
+
+    -- fmc_fpga_clk_*_i bypass signals
+    fmc_fpga_clk_p_o                         => open,
+    fmc_fpga_clk_n_o                         => open
+  );
 
   ----------------------------------------------------------------------
   --                            Analyser                              --
