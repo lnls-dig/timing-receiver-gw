@@ -993,7 +993,7 @@ set_max_delay -datapath_only -from               [get_pins -hier -filter {NAME =
 # signal, which is controlled by software and
 # is activated many many miliseconds after
 # all of the other. So, give it 1x the
-destination clock period
+# destination clock period
 set_max_delay -datapath_only -from               [get_pins -hier -filter {NAME =~ *acq_core/*acq_core_regs/*/C}] -to [get_clocks clk_sys] $clk_sys_period
 
 # Use Distributed RAMs for FMC ACQ FIFOs.
