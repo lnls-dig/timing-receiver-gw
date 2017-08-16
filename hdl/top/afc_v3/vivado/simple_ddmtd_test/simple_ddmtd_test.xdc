@@ -916,14 +916,14 @@ set clk_pll_ddr_period                           [get_property PERIOD [get_clock
 #######################################################################
 
 # Reset synchronization path.
-set sys_reset_ffs                                [get_nets -hier -filter {NAME =~ *cmp_sys_reset*/master_rstn*}]
-set_false_path -through                          [get_nets $sys_reset_ffs]
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_sys_reset/master_rstn_reg/C}]
 # Get the cell driving the corresponding net
+set sys_reset_ffs                                [get_nets -hier -filter {NAME =~ *cmp_sys_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $sys_reset_ffs]]]]
 
-set dmtd_reset_ffs                               [get_nets -hier -filter {NAME =~ *cmp_dmtd_reset*/master_rstn*}]
-set_false_path -through                          [get_nets $dmtd_reset_ffs]
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_dmtd_reset/master_rstn_reg/C}]
 # Get the cell driving the corresponding net
+set dmtd_reset_ffs                               [get_nets -hier -filter {NAME =~ *cmp_dmtd_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $dmtd_reset_ffs]]]]
 
 # DDR 3 temperature monitor reset path
