@@ -475,8 +475,10 @@ architecture rtl of simple_ddmtd_test is
   signal gpio_slave_led_o                   : t_wishbone_slave_out;
   signal gpio_slave_led_i                   : t_wishbone_slave_in;
   signal gpio_leds_out_int                  : std_logic_vector(c_leds_num_pins-1 downto 0);
-  signal heartbeat_leds_out_int             : std_logic_vector(c_leds_num_pins-1 downto 0);
-  signal heartbeat_led_int                  : std_logic;
+  signal heartbeat_dmtd_leds_out_int        : std_logic_vector(c_leds_num_pins-1 downto 0);
+  signal heartbeat_dmtd_led_int             : std_logic;
+  signal heartbeat_si57x_leds_out_int       : std_logic_vector(c_leds_num_pins-1 downto 0);
+  signal heartbeat_si57x_led_int            : std_logic;
   signal gpio_leds_in_int                   : std_logic_vector(c_leds_num_pins-1 downto 0) := (others => '0');
 
   signal buttons_dummy                      : std_logic_vector(7 downto 0) := (others => '0');
@@ -1047,7 +1049,9 @@ begin
   );
 
   -- LED Red, LED Green, LED Blue
-  leds_o <= gpio_leds_out_int or heartbeat_leds_out_int;
+  leds_o <= heartbeat_si57x_leds_out_int or
+            gpio_leds_out_int or
+            heartbeat_dmtd_leds_out_int;
 
   ----------------------------------------------------------------------
   --                            DMTD Test                             --
@@ -1060,10 +1064,22 @@ begin
     clk_i                                   => clk_dmtd,
     rst_n_i                                 => clk_dmtd_rstn,
 
-    heartbeat_o                             => heartbeat_led_int
+    heartbeat_o                             => heartbeat_dmtd_led_int
   );
 
-  heartbeat_leds_out_int <= "00" & heartbeat_led_int;
+  heartbeat_dmtd_leds_out_int <= "00" & heartbeat_dmtd_led_int;
+
+  -- Heartbeat module controls the Red LED
+  cmp_red_led : heartbeat
+  port map
+  (
+    clk_i                                   => clk_afc_si57x,
+    rst_n_i                                 => clk_afc_si57x_rstn,
+
+    heartbeat_o                             => heartbeat_si57x_led_int
+  );
+
+  heartbeat_si57x_leds_out_int <= heartbeat_si57x_led_int & "00";
 
   -- Phase measurement itself
   cmp_dmtd_phase_meas : dmtd_phase_meas_full
