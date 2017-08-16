@@ -18,10 +18,10 @@ set_property IN_TERM UNTUNED_SPLIT_50            [get_ports sys_clk_n_i]
 set_property PACKAGE_PIN AH18                    [get_ports clk_20m_vcxo_n_i]
 # MGT213_CLK1_P
 set_property PACKAGE_PIN AG18                    [get_ports clk_20m_vcxo_p_i]
-# MGT116_CLK1_N
-set_property PACKAGE_PIN G14                     [get_ports clk_afc_si57x_n_i]
-# MGT116_CLK1_P
-set_property PACKAGE_PIN H14                     [get_ports clk_afc_si57x_p_i]
+# MGT116_CLK0_N
+set_property PACKAGE_PIN G16                     [get_ports clk_afc_si57x_n_i]
+# MGT116_CLK0_P
+set_property PACKAGE_PIN H16                     [get_ports clk_afc_si57x_p_i]
 
 # TXD		IO_25_34
 set_property PACKAGE_PIN AB11                    [get_ports rs232_txd_o]
