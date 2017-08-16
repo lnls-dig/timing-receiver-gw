@@ -926,6 +926,11 @@ set_false_path -through                          [get_pins -hier -filter {NAME =
 set dmtd_reset_ffs                               [get_nets -hier -filter {NAME =~ *cmp_dmtd_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $dmtd_reset_ffs]]]]
 
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_afc_si57x_reset/master_rstn_reg/C}]
+# Get the cell driving the corresponding net
+set afc_si57x_reset_ffs                          [get_nets -hier -filter {NAME =~ *cmp_afc_si57x_reset*/master_rstn*}]
+set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $afc_si57x_reset_ffs]]]]
+
 # DDR 3 temperature monitor reset path
 # chain of FFs synched with clk_sys.
 #  We use asynchronous assertion and

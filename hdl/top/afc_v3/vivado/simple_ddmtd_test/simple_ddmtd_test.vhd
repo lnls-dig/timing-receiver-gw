@@ -294,6 +294,9 @@ architecture rtl of simple_ddmtd_test is
   constant c_clk_dmtd_id                    : natural := 0;
   constant c_clk_dmtd_div2_id               : natural := 1;
 
+  constant c_num_afc_si57x_clks             : natural := 1; -- CLK_SI57X
+  constant c_clk_afc_si57x_id               : natural := 0;
+
   constant c_dmtd_deglitch_thres            : natural := 1;
   constant c_dmtd_counter_bits              : natural := 14;
   constant c_dmtd_navg_width                : natural := 12;
@@ -394,6 +397,7 @@ architecture rtl of simple_ddmtd_test is
   -- Clocks and resets signals
   signal locked_sys                         : std_logic;
   signal locked_dmtd                        : std_logic;
+  signal locked_dmtd_and_sys                : std_logic;
   signal clk_sys_pcie_rstn                  : std_logic;
   signal clk_sys_pcie_rst                   : std_logic;
   signal clk_sys_rstn                       : std_logic;
@@ -406,6 +410,8 @@ architecture rtl of simple_ddmtd_test is
   signal clk_dmtd_rst                       : std_logic;
   signal clk_dmtd_div2_rstn                 : std_logic;
   signal clk_dmtd_div2_rst                  : std_logic;
+  signal clk_afc_si57x_rstn                 : std_logic;
+  signal clk_afc_si57x_rst                  : std_logic;
 
   signal rst_button_sys_pp                  : std_logic;
   signal rst_button_sys                     : std_logic;
@@ -416,6 +422,8 @@ architecture rtl of simple_ddmtd_test is
   signal reset_rstn_sys                     : std_logic_vector(c_num_tlvl_clks-1 downto 0);
   signal reset_clks_dmtd                    : std_logic_vector(c_num_dmtd_clks-1 downto 0);
   signal reset_rstn_dmtd                    : std_logic_vector(c_num_dmtd_clks-1 downto 0);
+  signal reset_clks_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
+  signal reset_rstn_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
 
   signal rs232_rstn                         : std_logic;
 
@@ -814,6 +822,8 @@ begin
   clk_dmtd_div2_rstn                        <= reset_rstn_dmtd(c_clk_dmtd_div2_id);
   clk_dmtd_div2_rst                         <=  not(reset_rstn_dmtd(c_clk_dmtd_div2_id));
 
+
+  locked_dmtd_and_sys <= locked_dmtd and locked_sys;
   ----------------------------------------------------------------------
   --                      Si57x Clock generation                      --
   ----------------------------------------------------------------------
@@ -833,7 +843,25 @@ begin
     I                                       => clk_afc_si57x_ibufds
   );
 
-  clk_afc_si57x <= clk_afc_si57x_bufg;
+  clk_afc_si57x                             <= clk_afc_si57x_bufg;
+
+  -- Reset synchronization. Hold reset line until few locked cycles have passed.
+  cmp_afc_si57x_reset : gc_reset
+  generic map(
+    g_clocks                                => c_num_afc_si57x_clks
+  )
+  port map(
+    free_clk_i                              => clk_afc_si57x_bufg,
+    locked_i                                => locked_dmtd_and_sys,
+    clks_i                                  => reset_clks_afc_si57x,
+    rstn_o                                  => reset_rstn_afc_si57x
+  );
+
+  reset_clks_afc_si57x(c_clk_afc_si57x_id)  <= clk_afc_si57x;
+
+  -- Reset synchronous to clk_afc_si57x
+  clk_afc_si57x_rstn                        <= reset_rstn_afc_si57x(c_clk_afc_si57x_id);
+  clk_afc_si57x_rst                         <=  not(reset_rstn_afc_si57x(c_clk_afc_si57x_id));
 
   ----------------------------------------------------------------------
   --                        Wishbone Modules                          --
