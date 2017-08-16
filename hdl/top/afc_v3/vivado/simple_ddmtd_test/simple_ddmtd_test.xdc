@@ -1,4 +1,4 @@
-# MHz AMC TCLKB input clock######################################################################
+#######################################################################
 ##                      Artix 7 AMC V3                               ##
 #######################################################################
 
@@ -884,9 +884,6 @@ set_property PACKAGE_PIN C18 [get_ports {pci_exp_rxn_i[3]}]
 # 125 MHz AMC TCLKB input clock
 create_clock -period 8.000 -name sys_clk_p_i [get_ports sys_clk_p_i]
 
-# 125 MHz Si57x input clock
-create_clock -period 8.000 -name sys_clk_p_i [get_ports clk_afc_si57x_p_i]
-
 # Create generated clocks from SYS PLL/MMCM
 create_generated_clock -name clk_sys    [get_pins -hier -filter {NAME =~ *cmp_pll_sys_inst/cmp_sys_pll/CLKOUT0}]
 set clk_sys_period                      [get_property PERIOD [get_clocks clk_sys]]
@@ -903,6 +900,10 @@ create_generated_clock -name clk_dmtd       [get_pins -hier -filter {NAME =~ *cm
 set clk_dmtd_period                         [get_property PERIOD [get_clocks clk_dmtd]]
 create_generated_clock -name clk_dmtd_div2  [get_pins -hier -filter {NAME =~ *cmp_dmtd_pll_inst/cmp_sys_pll/CLKOUT1}]
 set clk_dmtd_div2_period                    [get_property PERIOD [get_clocks clk_dmtd_div2]]
+
+# 125 MHz Si57x input clock
+create_clock -period 8.000 -name clk_afc_si57x  [get_ports clk_afc_si57x_p_i]
+set clk_afc_si57x_period                        [get_property PERIOD [get_clocks clk_afc_si57x]]
 
 # DDR3 clock generate by IP
 set clk_pll_ddr_period                      [get_property PERIOD [get_clocks clk_pll_i]]
@@ -929,12 +930,20 @@ set_false_path -through [get_nets -hier -filter {NAME =~ *theTlpControl/Memory_S
 # DDR 3 temperature monitor reset path
 set_max_delay -datapath_only -from [get_cells -hier -filter {NAME =~ *ddr3_infrastructure/rstdiv0_sync_r1_reg*}] -to [get_cells -hier -filter {NAME =~ *temp_mon_enabled.u_tempmon/xadc_supplied_temperature.rst_r1*}] 20.000
 
-# DMTD. Give 1x the source clock
+# DMTD CLK_SYS Sampling. Give 1x the source clock
 set_max_delay -datapath_only -from [get_clocks clk_sys] -to [get_clocks clk_dmtd] $clk_sys_period
 set_max_delay -datapath_only -from [get_clocks clk_dmtd] -to [get_clocks clk_sys] $clk_dmtd_period
 # Why does this do not get set by the above constraints?
 set_max_delay -from [get_pins -hier -filter {NAME =~*/cmp_sys_pll/CLKOUT0}] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_sys_period
 set_max_delay -from [get_pins -hier -filter {NAME =~*/cmp_sys_pll/CLKOUT0}] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_sys_period
+
+# DMTD CLK_SI57x Sampling. Give 1x the source clock
+set_max_delay -datapath_only -from [get_clocks clk_afc_si57x] -to [get_clocks clk_dmtd] $clk_afc_si57x_period
+set_max_delay -datapath_only -from [get_clocks clk_dmtd] -to [get_clocks clk_afc_si57x] $clk_dmtd_period
+# Why does this do not get set by the above constraints?
+set_max_delay -from [all_fanin -flat -only_cells -startpoints_only [get_pins -hier -filter {NAME =~ *gte2_si57x/O}]] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
+set_max_delay -from [all_fanin -flat -only_cells -startpoints_only [get_pins -hier -filter {NAME =~ *gte2_si57x/O}]] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
+
 # PCIe <-> DDR3. Give 1x the source clock
 set_max_delay -from [get_clocks clk_pll_i] -to [get_clocks clk_125mhz] $clk_pll_ddr_period
 
