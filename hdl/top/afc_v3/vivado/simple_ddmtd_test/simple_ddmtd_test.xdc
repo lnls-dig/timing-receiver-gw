@@ -949,8 +949,8 @@ set_max_delay -datapath_only -from               [get_clocks clk_afc_si57x] -to 
 set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_clocks clk_afc_si57x] $clk_dmtd_period
 # Why does this do not get set by
 #  the above constraints?
-set_max_delay -from                              [all_fanin -flat -only_cells -startpoints_only [get_pins -hier -filter {NAME =~ *gte2_si57x/O}]] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
-set_max_delay -from                              [all_fanin -flat -only_cells -startpoints_only [get_pins -hier -filter {NAME =~ *gte2_si57x/O}]] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
+set_max_delay -from                              [get_clocks clk_afc_si57x] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
+set_max_delay -from                              [get_clocks clk_afc_si57x] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
 
 # PCIe <-> DDR3. Give 1x the source clock
 set_max_delay -from                              [get_clocks clk_pll_i] -to [get_clocks clk_125mhz] $clk_pll_ddr_period
