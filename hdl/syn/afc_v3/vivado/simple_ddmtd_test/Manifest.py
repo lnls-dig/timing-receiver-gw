@@ -10,6 +10,7 @@ syn_tool = "vivado"
 syn_properties = [
     ["steps.synth_design.args.more options", "-verbose"],
     ["steps.synth_design.args.retiming", "1"],
+    ["steps.synth_design.args.flatten_hierarchy", "none"],
     ["steps.synth_design.args.assert", "1"],
     ["steps.opt_design.args.verbose", "1"],
     ["steps.opt_design.args.directive", "Explore"],
