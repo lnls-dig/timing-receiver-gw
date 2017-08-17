@@ -297,6 +297,9 @@ architecture rtl of simple_ddmtd_test is
   constant c_num_afc_si57x_clks             : natural := 1; -- CLK_SI57X
   constant c_clk_afc_si57x_id               : natural := 0;
 
+  constant c_num_ref_clk_clks               : natural := 1; -- CLK_REF
+  constant c_clk_ref_id                     : natural := 0;
+
   constant c_dmtd_deglitch_thres            : natural := 1;
   constant c_dmtd_counter_bits              : natural := 14;
   constant c_dmtd_navg_width                : natural := 12;
@@ -412,6 +415,8 @@ architecture rtl of simple_ddmtd_test is
   signal clk_dmtd_div2_rst                  : std_logic;
   signal clk_afc_si57x_rstn                 : std_logic;
   signal clk_afc_si57x_rst                  : std_logic;
+  signal clk_ref_rstn                       : std_logic;
+  signal clk_ref_rst                        : std_logic;
 
   signal rst_button_sys_pp                  : std_logic;
   signal rst_button_sys                     : std_logic;
@@ -424,6 +429,8 @@ architecture rtl of simple_ddmtd_test is
   signal reset_rstn_dmtd                    : std_logic_vector(c_num_dmtd_clks-1 downto 0);
   signal reset_clks_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
   signal reset_rstn_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
+  signal reset_clks_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
+  signal reset_rstn_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
 
   signal rs232_rstn                         : std_logic;
 
@@ -447,6 +454,10 @@ architecture rtl of simple_ddmtd_test is
   signal clk_afc_si57x_ibufds               : std_logic;
   signal clk_afc_si57x_bufg                 : std_logic;
   signal clk_afc_si57x                      : std_logic;
+
+  signal clk_ref_ibufds                     : std_logic;
+  signal clk_ref_bufg                       : std_logic;
+  signal clk_ref                            : std_logic;
 
   -- FS clocks
   signal fs_clk_array                       : std_logic_vector(c_acq_num_cores-1 downto 0);
@@ -864,6 +875,43 @@ begin
   -- Reset synchronous to clk_afc_si57x
   clk_afc_si57x_rstn                        <= reset_rstn_afc_si57x(c_clk_afc_si57x_id);
   clk_afc_si57x_rst                         <=  not(reset_rstn_afc_si57x(c_clk_afc_si57x_id));
+
+  ----------------------------------------------------------------------
+  --                      Reference Clock generation                      --
+  ----------------------------------------------------------------------
+
+  cmp_ibufds_ref_clk : IBUFDS
+  port map (
+    O                                       => clk_ref_ibufds,
+    I                                       => fmc1_clk1_m2c_p_i,
+    IB                                      => fmc1_clk1_m2c_n_i
+  );
+
+  cmp_ref_clk_bufg : BUFG
+  port map(
+    O                                       => clk_ref_bufg,
+    I                                       => clk_ref_ibufds
+  );
+
+  clk_ref                                   <= clk_ref_bufg;
+
+  -- Reset synchronization. Hold reset line until few locked cycles have passed.
+  cmp_ref_clk_reset : gc_reset
+  generic map(
+    g_clocks                                => c_num_ref_clk_clks
+  )
+  port map(
+    free_clk_i                              => clk_ref_bufg,
+    locked_i                                => locked_dmtd_and_sys,
+    clks_i                                  => reset_clks_ref_clk,
+    rstn_o                                  => reset_rstn_ref_clk
+  );
+
+  reset_clks_ref_clk(c_clk_ref_id)          <= clk_ref;
+
+  -- Reset synchronous to clk_ref
+  clk_ref_rstn                              <= reset_rstn_ref_clk(c_clk_ref_id);
+  clk_ref_rst                               <=  not(reset_rstn_ref_clk(c_clk_ref_id));
 
   ----------------------------------------------------------------------
   --                        Wishbone Modules                          --

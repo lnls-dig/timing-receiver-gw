@@ -936,6 +936,10 @@ set clk_dmtd_div2_period                         [get_property PERIOD [get_clock
 create_clock -period 8.000 -name clk_afc_si57x   [get_ports clk_afc_si57x_p_i]
 set clk_afc_si57x_period                         [get_property PERIOD [get_clocks clk_afc_si57x]]
 
+# 125 MHz Reference input clock
+create_clock -period 8.000 -name clk_ref         [get_ports fmc1_clk1_m2c_p_i]
+set clk_ref_period                               [get_property PERIOD [get_clocks clk_ref]]
+
 # DDR3 clock generate by IP
 set clk_pll_ddr_period                           [get_property PERIOD [get_clocks clk_pll_i]]
 
@@ -959,6 +963,10 @@ set_false_path -through                          [get_pins -hier -filter {NAME =
 set afc_si57x_reset_ffs                          [get_nets -hier -filter {NAME =~ *cmp_afc_si57x_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $afc_si57x_reset_ffs]]]]
 
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_ref_clk_reset/master_rstn_reg/C}]
+# Get the cell driving the corresponding net
+set ref_clk_reset_ffs                            [get_nets -hier -filter {NAME =~ *cmp_ref_clk_reset*/master_rstn*}]
+set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $ref_clk_reset_ffs]]]]
 # DDR 3 temperature monitor reset path
 # chain of FFs synched with clk_sys.
 #  We use asynchronous assertion and
