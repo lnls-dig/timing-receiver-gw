@@ -883,6 +883,9 @@ begin
   ----------------------------------------------------------------------
 
   cmp_ibufds_ref_clk : IBUFDS
+  generic map (
+    DIFF_TERM                               => TRUE
+  )
   port map (
     O                                       => clk_ref_ibufds,
     I                                       => fmc1_clk1_m2c_p_i,
