@@ -231,6 +231,8 @@ architecture rtl of simple_ddmtd_test is
                                                 to_unsigned(256, c_acq_chan_cmplt_width_log2);
   constant c_acq_num_atoms_u1               : unsigned(c_acq_num_atoms_width_log2-1 downto 0) :=
                                                 to_unsigned(1, c_acq_num_atoms_width_log2);
+  constant c_acq_num_atoms_u2               : unsigned(c_acq_num_atoms_width_log2-1 downto 0) :=
+                                                to_unsigned(2, c_acq_num_atoms_width_log2);
   constant c_acq_num_atoms_u4               : unsigned(c_acq_num_atoms_width_log2-1 downto 0) :=
                                                 to_unsigned(4, c_acq_num_atoms_width_log2);
   constant c_acq_num_atoms_u8               : unsigned(c_acq_num_atoms_width_log2-1 downto 0) :=
@@ -246,8 +248,8 @@ architecture rtl of simple_ddmtd_test is
 
   constant c_facq_channels                  : t_facq_chan_param_array(c_acq_num_channels-1 downto 0) :=
   (
-    c_acq_phase_raw_id    => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u1, atom_width => c_acq_atom_width_u64),
-    c_acq_phase_meas_id   => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u1, atom_width => c_acq_atom_width_u64)
+    c_acq_phase_raw_id    => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32),
+    c_acq_phase_meas_id   => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32)
   );
 
   -- Trigger
