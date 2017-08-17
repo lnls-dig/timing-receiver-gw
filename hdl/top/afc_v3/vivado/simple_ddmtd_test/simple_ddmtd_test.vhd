@@ -206,7 +206,8 @@ architecture rtl of simple_ddmtd_test is
   constant c_acq_ddr_addr_diff              : natural := c_acq_ddr_addr_res_width-c_ddr_addr_width;
 
   -- Acquisition core channel indexes
-  constant c_acq_phase_meas_id              : natural := 0;
+  constant c_acq_phase_raw_id               : natural := 0;
+  constant c_acq_phase_meas_id              : natural := 1;
 
   -- DDR3 Width
   constant c_acq_pos_ddr3_width             : natural := 32;
@@ -221,7 +222,7 @@ architecture rtl of simple_ddmtd_test is
   constant c_acq_core_1_id                  : natural := 1;
 
   -- Number of channels per acquisition core
-  constant c_acq_num_channels               : natural := 1; -- Phase meas
+  constant c_acq_num_channels               : natural := 2; -- Phase raw / Phase meas
   constant c_acq_width_u64                  : unsigned(c_acq_chan_cmplt_width_log2-1 downto 0) :=
                                                 to_unsigned(64, c_acq_chan_cmplt_width_log2);
   constant c_acq_width_u128                 : unsigned(c_acq_chan_cmplt_width_log2-1 downto 0) :=
@@ -245,13 +246,14 @@ architecture rtl of simple_ddmtd_test is
 
   constant c_facq_channels                  : t_facq_chan_param_array(c_acq_num_channels-1 downto 0) :=
   (
+    c_acq_phase_raw_id    => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u1, atom_width => c_acq_atom_width_u64),
     c_acq_phase_meas_id   => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u1, atom_width => c_acq_atom_width_u64)
   );
 
   -- Trigger
   constant c_trig_sync_edge                 : string   := "positive";
   constant c_trig_trig_num                  : positive := 8; -- 8 MLVDS triggers
-  constant c_trig_intern_num                : positive := 1; -- 1
+  constant c_trig_intern_num                : positive := 2; -- 2 (Phase raw / Phase meas)
   constant c_trig_rcv_intern_num            : positive := 2; -- 2 Extra internal triggers
   constant c_trig_num_mux_interfaces        : natural  := c_acq_num_cores;
   constant c_trig_out_resolver              : string := "fanout";
@@ -1208,14 +1210,30 @@ begin
   ----------------------------------------------------------------------
 
   --------------------
-  -- DMTD 1 data
+  -- DMTD 1 data, Phase Raw
   --------------------
-  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(unsigned(dmtd_phase_raw), 64));
-  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_raw_valid;
-  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_meas_id).pulse;
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(unsigned(dmtd_phase_raw), 64));
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).dvalid    <= dmtd_phase_raw_valid;
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).trig      <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_raw_id).pulse;
 
   --------------------
-  -- DMTD 2 data
+  -- DMTD 1 data, Phase Meas
+  --------------------
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(unsigned(dmtd_phase_meas), 64));
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_meas_id).pulse;
+
+  -- FIXME: For now, this acquisition core is the same as the other, but
+  -- it's placed here so can use another FMC and use this core for it.
+  --------------------
+  -- DMTD 2 data, Phase Raw
+  --------------------
+  acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(unsigned(dmtd_phase_raw), 64));
+  acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).dvalid    <= dmtd_phase_raw_valid;
+  acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).trig      <= trig_pulse_rcv(c_trig_mux_1_id, c_acq_phase_raw_id).pulse;
+
+  --------------------
+  -- DMTD 2 data, Phase Meas
   --------------------
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(unsigned(dmtd_phase_meas), 64));
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
