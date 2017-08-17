@@ -1217,14 +1217,14 @@ begin
   --------------------
   -- DMTD 1 data, Phase Raw
   --------------------
-  acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(unsigned(dmtd_phase_raw), 64));
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(signed(dmtd_phase_raw), 64));
   acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).dvalid    <= dmtd_phase_raw_valid;
   acq_chan_array(c_acq_core_0_id, c_acq_phase_raw_id).trig      <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_raw_id).pulse;
 
   --------------------
   -- DMTD 1 data, Phase Meas
   --------------------
-  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(unsigned(dmtd_phase_meas), 64));
+  acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(signed(dmtd_phase_meas), 64));
   acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
   acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_meas_id).pulse;
 
@@ -1233,14 +1233,14 @@ begin
   --------------------
   -- DMTD 2 data, Phase Raw
   --------------------
-  acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(unsigned(dmtd_phase_raw), 64));
+  acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).val       <= std_logic_vector(resize(signed(dmtd_phase_raw), 64));
   acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).dvalid    <= dmtd_phase_raw_valid;
   acq_chan_array(c_acq_core_1_id, c_acq_phase_raw_id).trig      <= trig_pulse_rcv(c_trig_mux_1_id, c_acq_phase_raw_id).pulse;
 
   --------------------
   -- DMTD 2 data, Phase Meas
   --------------------
-  acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(unsigned(dmtd_phase_meas), 64));
+  acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(signed(dmtd_phase_meas), 64));
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_1_id, c_acq_phase_meas_id).pulse;
 
