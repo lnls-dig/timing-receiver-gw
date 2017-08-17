@@ -967,6 +967,7 @@ set_false_path -through                          [get_pins -hier -filter {NAME =
 # Get the cell driving the corresponding net
 set ref_clk_reset_ffs                            [get_nets -hier -filter {NAME =~ *cmp_ref_clk_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $ref_clk_reset_ffs]]]]
+
 # DDR 3 temperature monitor reset path
 # chain of FFs synched with clk_sys.
 #  We use asynchronous assertion and
@@ -992,6 +993,15 @@ set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_
 #  the above constraints?
 set_max_delay -from                              [get_clocks clk_afc_si57x] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
 set_max_delay -from                              [get_clocks clk_afc_si57x] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_afc_si57x_period
+
+# DMTD REF_CLK Sampling.
+# Give 1x the source clock
+set_max_delay -datapath_only -from               [get_clocks clk_ref] -to [get_clocks clk_dmtd] $clk_ref_period
+set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_clocks clk_ref] $clk_dmtd_period
+# Why does this do not get set by
+#  the above constraints?
+set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
+set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
 
 # PCIe <-> DDR3. Give 1x the source clock
 set_max_delay -from                              [get_clocks clk_pll_i] -to [get_clocks clk_125mhz] $clk_pll_ddr_period

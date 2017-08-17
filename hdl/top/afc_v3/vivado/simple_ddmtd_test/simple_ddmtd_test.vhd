@@ -1146,7 +1146,7 @@ begin
     clk_sys_i                              => clk_sys,
     -- Input clocks
     clk_a_i                                => clk_afc_si57x,
-    clk_b_i                                => clk_sys,
+    clk_b_i                                => clk_ref,
     clk_dmtd_i                             => clk_dmtd,
 
     en_i                                   => std_logic'('1'),
