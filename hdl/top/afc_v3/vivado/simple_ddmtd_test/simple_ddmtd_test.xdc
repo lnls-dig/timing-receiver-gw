@@ -146,13 +146,13 @@ set_property PULLUP true                         [get_ports adn4604_vadj2_clk_up
 ########################################################################
 
 set_property PACKAGE_PIN H6                       [get_ports fmc1_clk0_m2c_n_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_clk0_m2c_n_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc1_clk0_m2c_n_i]
 set_property PACKAGE_PIN H7                       [get_ports fmc1_clk0_m2c_p_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_clk0_m2c_p_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc1_clk0_m2c_p_i]
 set_property PACKAGE_PIN N4                       [get_ports fmc1_clk1_m2c_n_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_clk1_m2c_n_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc1_clk1_m2c_n_i]
 set_property PACKAGE_PIN P5                       [get_ports fmc1_clk1_m2c_p_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_clk1_m2c_p_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc1_clk1_m2c_p_i]
 
 set_property PACKAGE_PIN H29                      [get_ports fmc1_ha_n_i[0] ]
 set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_ha_n_i[0] ]
@@ -480,13 +480,13 @@ set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_la_p_i[33]]
 ########################################################################
 
 set_property PACKAGE_PIN AB30                     [get_ports fmc2_clk0_m2c_n_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_clk0_m2c_n_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_n_i]
 set_property PACKAGE_PIN AA30                     [get_ports fmc2_clk0_m2c_p_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_clk0_m2c_p_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_p_i]
 set_property PACKAGE_PIN AG30                     [get_ports fmc2_clk1_m2c_n_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_clk1_m2c_n_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_n_i]
 set_property PACKAGE_PIN AG29                     [get_ports fmc2_clk1_m2c_p_i]
-set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_clk1_m2c_p_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_p_i]
 
 set_property PACKAGE_PIN AM30                     [get_ports fmc2_ha_n_i[0] ]
 set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_ha_n_i[0] ]
