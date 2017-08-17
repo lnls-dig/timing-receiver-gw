@@ -109,12 +109,12 @@ port(
   fmc1_clk0_m2c_n_i                          : in std_logic;
   fmc1_clk1_m2c_p_i                          : in std_logic;
   fmc1_clk1_m2c_n_i                          : in std_logic;
-  fmc1_la_p                                  : in std_logic_vector(33 downto 0);
-  fmc1_la_n                                  : in std_logic_vector(33 downto 0);
-  fmc1_ha_p                                  : in std_logic_vector(23 downto 0);
-  fmc1_ha_n                                  : in std_logic_vector(23 downto 0);
-  fmc1_hb_p                                  : in std_logic_vector(21 downto 0);
-  fmc1_hb_n                                  : in std_logic_vector(21 downto 0);
+  fmc1_la_p_i                                : in std_logic_vector(33 downto 0);
+  fmc1_la_n_i                                : in std_logic_vector(33 downto 0);
+  fmc1_ha_p_i                                : in std_logic_vector(23 downto 0);
+  fmc1_ha_n_i                                : in std_logic_vector(23 downto 0);
+  fmc1_hb_p_i                                : in std_logic_vector(21 downto 0);
+  fmc1_hb_n_i                                : in std_logic_vector(21 downto 0);
 
   -----------------------------
   -- FMC2 XM105 Breakout Board ports
@@ -123,12 +123,12 @@ port(
   fmc2_clk0_m2c_n_i                          : in std_logic;
   fmc2_clk1_m2c_p_i                          : in std_logic;
   fmc2_clk1_m2c_n_i                          : in std_logic;
-  fmc2_la_p                                  : in std_logic_vector(33 downto 0);
-  fmc2_la_n                                  : in std_logic_vector(33 downto 0);
-  fmc2_ha_p                                  : in std_logic_vector(23 downto 0);
-  fmc2_ha_n                                  : in std_logic_vector(23 downto 0);
-  fmc2_hb_p                                  : in std_logic_vector(21 downto 0);
-  fmc2_hb_n                                  : in std_logic_vector(21 downto 0);
+  fmc2_la_p_i                                : in std_logic_vector(33 downto 0);
+  fmc2_la_n_i                                : in std_logic_vector(33 downto 0);
+  fmc2_ha_p_i                                : in std_logic_vector(23 downto 0);
+  fmc2_ha_n_i                                : in std_logic_vector(23 downto 0);
+  fmc2_hb_p_i                                : in std_logic_vector(21 downto 0);
+  fmc2_hb_n_i                                : in std_logic_vector(21 downto 0);
 
   -----------------------------------------
   -- PCIe pins
