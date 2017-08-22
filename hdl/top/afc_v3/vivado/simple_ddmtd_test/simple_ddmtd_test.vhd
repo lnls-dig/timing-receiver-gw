@@ -516,7 +516,9 @@ architecture rtl of simple_ddmtd_test is
   signal dmtd_tag_b                         : std_logic_vector(c_dmtd_counter_bits-1 downto 0);
   signal dmtd_tag_b_valid                   : std_logic;
   --FIXME. hardcoded value
-  signal dmtd_navg                          : std_logic_vector(c_dmtd_navg_width-1 downto 0) := std_logic_vector(to_unsigned(10, c_dmtd_navg_width));
+  signal dmtd_navg                          : std_logic_vector(c_dmtd_navg_width-1 downto 0) :=
+                                                std_logic_vector(to_unsigned(50000,
+                                                                             c_dmtd_navg_width));
   signal dmtd_phase_raw                     : std_logic_vector(c_dmtd_counter_bits-1 downto 0);
   signal dmtd_phase_raw_valid               : std_logic;
   signal dmtd_phase_meas                    : std_logic_vector(31 downto 0);
