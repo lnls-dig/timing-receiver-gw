@@ -508,8 +508,8 @@ architecture rtl of timing_receiver is
   signal gpio_leds_out_int                  : std_logic_vector(c_leds_num_pins-1 downto 0);
   signal heartbeat_dmtd_leds_out_int        : std_logic_vector(c_leds_num_pins-1 downto 0);
   signal heartbeat_dmtd_led_int             : std_logic;
-  signal heartbeat_si57x_leds_out_int       : std_logic_vector(c_leds_num_pins-1 downto 0);
-  signal heartbeat_si57x_led_int            : std_logic;
+  signal heartbeat_dmtd_b_leds_out_int      : std_logic_vector(c_leds_num_pins-1 downto 0);
+  signal heartbeat_dmtd_b_led_int           : std_logic;
   signal gpio_leds_in_int                   : std_logic_vector(c_leds_num_pins-1 downto 0) := (others => '0');
 
   signal buttons_dummy                      : std_logic_vector(7 downto 0) := (others => '0');
@@ -1199,7 +1199,7 @@ begin
   );
 
   -- LED Red, LED Green, LED Blue
-  leds_o <= heartbeat_si57x_leds_out_int or
+  leds_o <= heartbeat_dmtd_b_leds_out_int or
             gpio_leds_out_int or
             heartbeat_dmtd_leds_out_int;
 
@@ -1223,13 +1223,13 @@ begin
   cmp_red_led : heartbeat
   port map
   (
-    clk_i                                   => clk_afc_si57x,
-    rst_n_i                                 => clk_afc_si57x_rstn,
+    clk_i                                   => clk_dmtd_b,
+    rst_n_i                                 => clk_dmtd_b_rstn,
 
-    heartbeat_o                             => heartbeat_si57x_led_int
+    heartbeat_o                             => heartbeat_dmtd_b_led_int
   );
 
-  heartbeat_si57x_leds_out_int <= heartbeat_si57x_led_int & "00";
+  heartbeat_dmtd_b_leds_out_int <= heartbeat_dmtd_b_led_int & "00";
 
   -- Phase measurement itself
   cmp_dmtd_phase_meas : dmtd_phase_meas_full
