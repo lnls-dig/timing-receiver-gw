@@ -48,7 +48,7 @@ use work.synthesis_descriptor_pkg.all;
 -- AXI cores
 use work.pcie_cntr_axi_pkg.all;
 
-entity simple_ddmtd_test is
+entity timing_receiver is
 port(
   -----------------------------------------
   -- Clocking pins
@@ -164,9 +164,9 @@ port(
   -- General board LEDs
   leds_o                                    : out std_logic_vector(2 downto 0)
 );
-end simple_ddmtd_test;
+end timing_receiver;
 
-architecture rtl of simple_ddmtd_test is
+architecture rtl of timing_receiver is
 
   -- Top crossbar layout
   -- Number of slaves

@@ -1,10 +1,10 @@
-files = [ "simple_ddmtd_test.vhd",
+files = [ "timing_receiver.vhd",
           "sys_pll.vhd",
           "clk_gen.vhd",
-          "simple_ddmtd_test.xdc",
+          "timing_receiver.xdc",
           "pcie_core.xdc",
           "ddr_core.xdc",
-          "simple_ddmtd_test.xcf"
+          "timing_receiver.xcf"
         ];
 
 

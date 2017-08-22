@@ -4,8 +4,8 @@ action = "synthesis"
 syn_device = "xc7a200t"
 syn_grade = "-2"
 syn_package = "ffg1156"
-syn_top = "simple_ddmtd_test"
-syn_project = "simple_ddmtd_test"
+syn_top = "timing_receiver"
+syn_project = "timing_receiver"
 syn_tool = "vivado"
 syn_properties = [
     ["steps.synth_design.args.more options", "-verbose"],
@@ -34,4 +34,4 @@ if os.path.isfile("synthesis_descriptor_pkg.vhd"):
 else:
     sys.exit("Generate the SDB descriptor before using HDLMake (./build_synthesis_sdb.sh)")
 
-modules = { "local" : [ "../../../../top/afc_v3/vivado/simple_ddmtd_test" ] };
+modules = { "local" : [ "../../../../top/afc_v3/vivado/timing_receiver" ] };
