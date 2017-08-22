@@ -306,7 +306,7 @@ architecture rtl of simple_ddmtd_test is
 
   constant c_dmtd_deglitch_thres            : natural := 10;
   constant c_dmtd_counter_bits              : natural := 14;
-  constant c_dmtd_navg_width                : natural := 12;
+  constant c_dmtd_navg_width                : natural := 18;
 
   -- General peripherals layout. UART, LEDs (GPIO), Buttons (GPIO) and Tics counter
   constant c_periph_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
@@ -638,6 +638,7 @@ architecture rtl of simple_ddmtd_test is
 
   component dmtd_phase_meas_full
   generic (
+    g_navg_bits           : integer := 12;
     -- DDMTD deglitcher threshold (in clk_dmtd_i) clock cycles
     g_deglitcher_threshold: integer;
     -- Phase tag counter size (see dmtd_with_deglitcher.vhd for explanation)
@@ -662,7 +663,7 @@ architecture rtl of simple_ddmtd_test is
     tag_b_o        : out std_logic_vector(g_counter_bits-1 downto 0);
     tag_b_p_o      : out std_logic;
 
-    navg_i         : in  std_logic_vector(11 downto 0);
+    navg_i         : in  std_logic_vector(g_navg_bits-1 downto 0);
     phase_raw_o    : out std_logic_vector(g_counter_bits-1 downto 0);
     phase_raw_p_o  : out std_logic;
     phase_meas_o   : out std_logic_vector(31 downto 0);
@@ -1139,6 +1140,7 @@ begin
   -- Phase measurement itself
   cmp_dmtd_phase_meas : dmtd_phase_meas_full
   generic map (
+    g_navg_bits                            => c_dmtd_navg_width,
     -- DDMTD deglitcher threshold (in clk_dmtd_i) clock cycles
     g_deglitcher_threshold                 => c_dmtd_deglitch_thres,
     -- Phase tag counter size (see dmtd_with_deglitcher.vhd for explanation)
