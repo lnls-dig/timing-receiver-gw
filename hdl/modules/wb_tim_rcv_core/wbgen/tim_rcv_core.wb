@@ -1,0 +1,73 @@
+peripheral {
+  name = "Timing Receiver Core registers";
+  description = "Wishbone slave for Timing Receiver Core";
+  hdl_entity = "tim_rcv_core_regs";
+
+  prefix = "tim_rcv_core";
+
+  reg {
+    name = "Phase Measurement Control register";
+    prefix = "phase_meas_ctl1";
+
+    field {
+      name = "Number of phase measurement averages";
+      description = "Number of phase measurement averages";
+      prefix = "navg";
+      type = SLV;
+      size = 32;
+      access_bus = READ_WRITE;
+      access_dev = READ_ONLY;
+    };
+  };
+
+  reg {
+    name = "DMTD A Control register";
+    prefix = "dmtd_a_ctl";
+
+    field {
+      name = "Deglitcher Threshold";
+      description = "Number of comparison clock cycles for DMTD";
+      prefix = "deglitcher_thres";
+      type = SLV;
+      size = 16;
+      access_bus = READ_WRITE;
+      access_dev = READ_ONLY;
+    };
+
+    field {
+      name = "Reserved1";
+      description = "Ignore on read, write with 0's";
+      prefix = "reserved1";
+      type = SLV;
+      size = 16;
+      access_bus = READ_ONLY;
+      access_dev = WRITE_ONLY;
+    };
+  };
+
+  reg {
+    name = "DMTD B Control register";
+    prefix = "dmtd_b_ctl";
+
+    field {
+      name = "Deglitcher Threshold";
+      description = "Number of comparison clock cycles for DMTD";
+      prefix = "deglitcher_thres";
+      type = SLV;
+      size = 16;
+      access_bus = READ_WRITE;
+      access_dev = READ_ONLY;
+    };
+
+    field {
+      name = "Reserved1";
+      description = "Ignore on read, write with 0's";
+      prefix = "reserved1";
+      type = SLV;
+      size = 16;
+      access_bus = READ_ONLY;
+      access_dev = WRITE_ONLY;
+    };
+  };
+
+};
