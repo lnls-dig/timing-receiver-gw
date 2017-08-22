@@ -304,7 +304,7 @@ architecture rtl of simple_ddmtd_test is
   constant c_num_ref_clk_clks               : natural := 1; -- CLK_REF
   constant c_clk_ref_id                     : natural := 0;
 
-  constant c_dmtd_deglitch_thres            : natural := 1;
+  constant c_dmtd_deglitch_thres            : natural := 10;
   constant c_dmtd_counter_bits              : natural := 14;
   constant c_dmtd_navg_width                : natural := 12;
 
