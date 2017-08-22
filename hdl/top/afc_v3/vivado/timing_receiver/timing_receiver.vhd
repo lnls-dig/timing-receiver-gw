@@ -174,7 +174,7 @@ architecture rtl of timing_receiver is
 
   -- Top crossbar layout
   -- Number of slaves
-  constant c_slaves                         : natural := 13;
+  constant c_slaves                         : natural := 9;
   -- Acq_Core 1, Acq_Core 2,
   -- TRIG Iface, TRIG MUX 1, TRIG MUX 2,
   -- FMC active clock
@@ -189,12 +189,15 @@ architecture rtl of timing_receiver is
   constant c_slv_trig_iface_id              : natural := 4;
   constant c_slv_trig_mux_0_id              : natural := 5;
   constant c_slv_trig_mux_1_id              : natural := 6;
-  constant c_slv_active_clk_id              : natural := 7;
-  constant c_slv_sdb_repo_url_id            : natural := 8;
-  constant c_slv_sdb_top_syn_id             : natural := 9;
-  constant c_slv_sdb_gen_cores_id           : natural := 10;
-  constant c_slv_sdb_infra_cores_id         : natural := 11;
-  constant c_slv_sdb_wr_cores_id            : natural := 12;
+  constant c_slv_tim_rcv_core_id            : natural := 7;
+  constant c_slv_active_clk_id              : natural := 8;
+
+  -- Not accounted iun the number of slaves as these are special
+  constant c_slv_sdb_repo_url_id            : natural := 9;
+  constant c_slv_sdb_top_syn_id             : natural := 10;
+  constant c_slv_sdb_gen_cores_id           : natural := 11;
+  constant c_slv_sdb_infra_cores_id         : natural := 12;
+  constant c_slv_sdb_wr_cores_id            : natural := 13;
 
   -- Number of masters
   constant c_masters                        : natural := 2;            -- RS232-Syscon, PCIe
@@ -321,7 +324,7 @@ architecture rtl of timing_receiver is
   constant c_fmc_active_clk_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000300");
 
   -- WB SDB (Self describing bus) layout
-  constant c_layout : t_sdb_record_array(c_slaves-1 downto 0) :=
+  constant c_layout : t_sdb_record_array(c_slaves+5-1 downto 0) :=
   (
      c_slv_acq_core_0_id       => f_sdb_embed_device(c_xwb_acq_core_sdb,         x"00330000"),   -- Data Acquisition control port
      c_slv_acq_core_1_id       => f_sdb_embed_device(c_xwb_acq_core_sdb,         x"00360000"),   -- Data Acquisition control port
