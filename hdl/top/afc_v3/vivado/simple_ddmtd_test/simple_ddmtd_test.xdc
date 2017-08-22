@@ -483,10 +483,10 @@ set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_la_p_i[33]]
 #set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_n_i]
 #set_property PACKAGE_PIN AA30                     [get_ports fmc2_clk0_m2c_p_i]
 #set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_p_i]
-#set_property PACKAGE_PIN AG30                     [get_ports fmc2_clk1_m2c_n_i]
-#set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_n_i]
-#set_property PACKAGE_PIN AG29                     [get_ports fmc2_clk1_m2c_p_i]
-#set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_p_i]
+set_property PACKAGE_PIN AG30                     [get_ports fmc2_clk1_m2c_n_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_n_i]
+set_property PACKAGE_PIN AG29                     [get_ports fmc2_clk1_m2c_p_i]
+set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_p_i]
 
 set_property PACKAGE_PIN AM30                     [get_ports fmc2_ha_n_i[0] ]
 set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_ha_n_i[0] ]
@@ -941,6 +941,14 @@ set clk_afc_si57x_period                         [get_property PERIOD [get_clock
 create_clock -period 8.000 -name clk_ref         [get_ports fmc1_clk1_m2c_p_i]
 set clk_ref_period                               [get_property PERIOD [get_clocks clk_ref]]
 
+# 125 MHz Reference input clock
+create_clock -period 8.000 -name clk_ext_fmc2    [get_ports fmc2_clk1_m2c_p_i]
+set clk_ext_fmc2_period                          [get_property PERIOD [get_clocks clk_ext_fmc2]]
+
+# We only use si57x or the clk_ext_fmc2. So it's safe to declare them
+# mutually exclusive
+set_clock_groups -logically_exclusive -group clk_afc_si57x -group clk_ext_fmc2
+
 # DDR3 clock generate by IP
 set clk_pll_ddr_period                           [get_property PERIOD [get_clocks clk_pll_i]]
 
@@ -1003,6 +1011,15 @@ set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_
 #  the above constraints?
 set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
 set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
+
+# DMTD EXT_FMC2_CLK Sampling.
+# Give 1x the source clock
+set_max_delay -datapath_only -from               [get_clocks clk_ext_fmc2] -to [get_clocks clk_dmtd] $clk_ext_fmc2_period
+set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_clocks clk_ext_fmc2] $clk_dmtd_period
+# Why does this do not get set by
+#  the above constraints?
+set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
+set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
 
 # PCIe <-> DDR3. Give 1x the source clock
 set_max_delay -from                              [get_clocks clk_pll_i] -to [get_clocks clk_125mhz] $clk_pll_ddr_period

@@ -304,6 +304,9 @@ architecture rtl of simple_ddmtd_test is
   constant c_num_ref_clk_clks               : natural := 1; -- CLK_REF
   constant c_clk_ref_id                     : natural := 0;
 
+  constant c_num_ext_fmc2_clk_clks          : natural := 1; -- CLK_EXT_FMC2
+  constant c_clk_ext_fmc2_id                : natural := 0;
+
   constant c_dmtd_deglitch_thres            : natural := 10;
   constant c_dmtd_counter_bits              : natural := 14;
   constant c_dmtd_navg_width                : natural := 18;
@@ -421,6 +424,10 @@ architecture rtl of simple_ddmtd_test is
   signal clk_afc_si57x_rst                  : std_logic;
   signal clk_ref_rstn                       : std_logic;
   signal clk_ref_rst                        : std_logic;
+  signal clk_ext_fmc2_rstn                  : std_logic;
+  signal clk_ext_fmc2_rst                   : std_logic;
+  signal clk_dmtd_b_rstn                    : std_logic;
+  signal clk_dmtd_b_rst                     : std_logic;
 
   signal rst_button_sys_pp                  : std_logic;
   signal rst_button_sys                     : std_logic;
@@ -435,6 +442,8 @@ architecture rtl of simple_ddmtd_test is
   signal reset_rstn_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
   signal reset_clks_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
   signal reset_rstn_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
+  signal reset_clks_ext_fmc2_clk            : std_logic_vector(c_num_ext_fmc2_clk_clks-1 downto 0);
+  signal reset_rstn_ext_fmc2_clk            : std_logic_vector(c_num_ext_fmc2_clk_clks-1 downto 0);
 
   signal rs232_rstn                         : std_logic;
 
@@ -446,6 +455,9 @@ architecture rtl of simple_ddmtd_test is
   -- DMTD clocks
   signal clk_dmtd                           : std_logic;
   signal clk_dmtd_div2                      : std_logic;
+  signal clk_dmtd_a                         : std_logic;
+  signal clk_dmtd_b                         : std_logic;
+  signal clk_dmtd_sel                       : std_logic;
 
    -- Global Clock Single ended
   signal sys_clk_gen                        : std_logic;
@@ -462,6 +474,10 @@ architecture rtl of simple_ddmtd_test is
   signal clk_ref_ibufds                     : std_logic;
   signal clk_ref_bufg                       : std_logic;
   signal clk_ref                            : std_logic;
+
+  signal clk_ext_fmc2_ibufds                : std_logic;
+  signal clk_ext_fmc2_bufg                  : std_logic;
+  signal clk_ext_fmc2                       : std_logic;
 
   -- FS clocks
   signal fs_clk_array                       : std_logic_vector(c_acq_num_cores-1 downto 0);
@@ -562,6 +578,7 @@ architecture rtl of simple_ddmtd_test is
   signal TRIG_ILA4_3                        : std_logic_vector(31 downto 0);
 
   signal trig_ila0_probe                    : std_logic_vector(63 downto 0);
+  signal trig_vio0_probe                    : std_logic_vector(63 downto 0);
 
   ---------------------------
   --      Components       --
@@ -571,6 +588,13 @@ architecture rtl of simple_ddmtd_test is
   port (
     clk                                     : in std_logic;
     probe0                                  : in std_logic_vector(63 downto 0)
+  );
+  end component;
+
+  component vio_64_width
+  port (
+    clk                                     : in std_logic;
+    probe_out0                              : out std_logic_vector(63 downto 0)
   );
   end component;
 
@@ -844,6 +868,7 @@ begin
 
 
   locked_dmtd_and_sys <= locked_dmtd and locked_sys;
+
   ----------------------------------------------------------------------
   --                      Si57x Clock generation                      --
   ----------------------------------------------------------------------
@@ -884,7 +909,7 @@ begin
   clk_afc_si57x_rst                         <=  not(reset_rstn_afc_si57x(c_clk_afc_si57x_id));
 
   ----------------------------------------------------------------------
-  --                      Reference Clock generation                      --
+  --                  Reference Clock FMC 1 generation                --
   ----------------------------------------------------------------------
 
   cmp_ibufds_ref_clk : IBUFDS
@@ -922,6 +947,73 @@ begin
   -- Reset synchronous to clk_ref
   clk_ref_rstn                              <= reset_rstn_ref_clk(c_clk_ref_id);
   clk_ref_rst                               <=  not(reset_rstn_ref_clk(c_clk_ref_id));
+
+  ----------------------------------------------------------------------
+  --                  External Clock FMC 2 generation                 --
+  ----------------------------------------------------------------------
+
+  cmp_ibufds_ext_fmc2_clk : IBUFDS
+  generic map (
+    DIFF_TERM                               => TRUE
+  )
+  port map (
+    O                                       => clk_ext_fmc2_ibufds,
+    I                                       => fmc2_clk1_m2c_p_i,
+    IB                                      => fmc2_clk1_m2c_n_i
+  );
+
+  cmp_ext_fmc2_clk_bufg : BUFG
+  port map(
+    O                                       => clk_ext_fmc2_bufg,
+    I                                       => clk_ext_fmc2_ibufds
+  );
+
+  clk_ext_fmc2                              <= clk_ext_fmc2_bufg;
+
+  -- Reset synchronization. Hold reset line until few locked cycles have passed.
+  cmp_ext_fmc2_clk_reset : gc_reset
+  generic map(
+    g_clocks                                => c_num_ext_fmc2_clk_clks
+  )
+  port map(
+    free_clk_i                              => clk_ext_fmc2_bufg,
+    locked_i                                => locked_dmtd_and_sys,
+    clks_i                                  => reset_clks_ext_fmc2_clk,
+    rstn_o                                  => reset_rstn_ext_fmc2_clk
+  );
+
+  reset_clks_ext_fmc2_clk(c_clk_ext_fmc2_id)
+                                            <= clk_ext_fmc2;
+
+  -- Reset synchronous to clk_ext_fmc2
+  clk_ext_fmc2_rstn                         <= reset_rstn_ext_fmc2_clk(c_clk_ext_fmc2_id);
+  clk_ext_fmc2_rst                          <=  not(reset_rstn_ext_fmc2_clk(c_clk_ext_fmc2_id));
+
+  ----------------------------------------------------------------------
+  --                            DMTD Clock B                          --
+  ----------------------------------------------------------------------
+
+  -- We can select between the Si57x or FMC2 external clock for DMTD clock
+  -- input. WARNING. DON'T USE clk_afc_si57x and clk_ext_fmc2 signals! Use only
+  -- clk_dmtd_b output!
+  --
+  -- If used, this timing path will not be analyzed as we have declared these
+  -- clocks as exclusive!
+  cmp_dmtd_b_bugmux : BUFGMUX
+  generic map (
+    CLK_SEL_TYPE                            => "SYNC"
+  )
+  port map (
+    O                                       => clk_dmtd_b,
+    I0                                      => clk_afc_si57x,
+    I1                                      => clk_ext_fmc2,
+    S                                       => clk_dmtd_sel
+  );
+
+  clk_dmtd_b_rstn                           <= clk_afc_si57x_rstn when clk_dmtd_sel = '0' else
+                                               clk_ext_fmc2_rstn;
+  clk_dmtd_b_rst                            <= clk_afc_si57x_rst when clk_dmtd_sel = '0' else
+                                               clk_ext_fmc2_rst;
 
   ----------------------------------------------------------------------
   --                        Wishbone Modules                          --
@@ -1156,8 +1248,8 @@ begin
     -- system clock
     clk_sys_i                              => clk_sys,
     -- Input clocks
-    clk_a_i                                => clk_afc_si57x,
-    clk_b_i                                => clk_ref,
+    clk_a_i                                => clk_ref,
+    clk_b_i                                => clk_dmtd_b,
     clk_dmtd_i                             => clk_dmtd,
 
     en_i                                   => std_logic'('1'),
@@ -1174,6 +1266,8 @@ begin
     phase_meas_o                           => dmtd_phase_meas,
     phase_meas_p_o                         => dmtd_phase_meas_valid
   );
+
+  clk_dmtd_a                               <= clk_ref;
 
   ----------------------------------------------------------------------
   --                      AFC Diagnostics                             --
@@ -1494,6 +1588,17 @@ begin
 
   --TRIG_ILA0_3(0)                            <= dmtd_phase_meas_valid;
   --TRIG_ILA0_3(31 downto 1)                  <= (others => '0');
+
+  ----------------------------------------------------------------------
+  --                                 VIO                              --
+  ----------------------------------------------------------------------
+  cmp_vivado_vio : vio_64_width
+  port map (
+    clk                                          => clk_sys,
+    probe_out0                                   => trig_vio0_probe
+  );
+
+  clk_dmtd_sel                                   <= trig_vio0_probe(0);
 
   ----------------------------------------------------------------------
   --                      Triggers Chipscope                          --
