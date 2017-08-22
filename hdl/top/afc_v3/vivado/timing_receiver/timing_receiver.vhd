@@ -43,6 +43,10 @@ use work.acq_core_pkg.all;
 use work.ipcores_pkg.all;
 -- Trigger package
 use work.trigger_pkg.all;
+-- Timing Receiver Modules
+use work.tim_rcv_pkg.all;
+-- Timing Receiver
+use work.tim_rcv_core_pkg.all;
 -- Meta Package
 use work.synthesis_descriptor_pkg.all;
 -- AXI cores
@@ -307,9 +311,8 @@ architecture rtl of timing_receiver is
   constant c_num_ext_fmc2_clk_clks          : natural := 1; -- CLK_EXT_FMC2
   constant c_clk_ext_fmc2_id                : natural := 0;
 
-  constant c_dmtd_deglitch_thres            : natural := 10;
+  -- DMTD constants
   constant c_dmtd_counter_bits              : natural := 14;
-  constant c_dmtd_navg_width                : natural := 18;
 
   -- General peripherals layout. UART, LEDs (GPIO), Buttons (GPIO) and Tics counter
   constant c_periph_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
@@ -327,8 +330,10 @@ architecture rtl of timing_receiver is
      c_slv_trig_iface_id       => f_sdb_embed_device(c_xwb_trigger_iface_sdb,    x"00390000"),   -- Trigger Interface port
      c_slv_trig_mux_0_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00400000"),   -- Trigger Mux 1 port
      c_slv_trig_mux_1_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00410000"),   -- Trigger Mux 2 port
+     c_slv_tim_rcv_core_id     => f_sdb_embed_device(c_xwb_tim_rcv_core_regs_sdb,
+                                                                                 x"00420000"),   -- Timing Receiver port
      c_slv_active_clk_id       => f_sdb_embed_bridge(c_fmc_active_clk_bridge_sdb,
-                                                                                 x"00420000"),   -- FMC Active clock
+                                                                                 x"00430000"),   -- FMC Active clock
      c_slv_sdb_repo_url_id     => f_sdb_embed_repo_url(c_sdb_repo_url),
      c_slv_sdb_top_syn_id      => f_sdb_embed_synthesis(c_sdb_top_syn_info),
      c_slv_sdb_gen_cores_id    => f_sdb_embed_synthesis(c_sdb_general_cores_syn_info),
@@ -531,10 +536,6 @@ architecture rtl of timing_receiver is
   signal dmtd_tag_a_valid                   : std_logic;
   signal dmtd_tag_b                         : std_logic_vector(c_dmtd_counter_bits-1 downto 0);
   signal dmtd_tag_b_valid                   : std_logic;
-  --FIXME. hardcoded value
-  signal dmtd_navg                          : std_logic_vector(c_dmtd_navg_width-1 downto 0) :=
-                                                std_logic_vector(to_unsigned(50000,
-                                                                             c_dmtd_navg_width));
   signal dmtd_phase_raw                     : std_logic_vector(c_dmtd_counter_bits-1 downto 0);
   signal dmtd_phase_raw_valid               : std_logic;
   signal dmtd_phase_meas                    : std_logic_vector(31 downto 0);
@@ -1204,7 +1205,7 @@ begin
             heartbeat_dmtd_leds_out_int;
 
   ----------------------------------------------------------------------
-  --                            DMTD Test                             --
+  --                            Clocks Heartbeat                      --
   ----------------------------------------------------------------------
 
   -- Heartbeat module controls the Blue LED
@@ -1231,43 +1232,48 @@ begin
 
   heartbeat_dmtd_b_leds_out_int <= heartbeat_dmtd_b_led_int & "00";
 
-  -- Phase measurement itself
-  cmp_dmtd_phase_meas : dmtd_phase_meas_full
+  ----------------------------------------------------------------------
+  --                         Timing Receiver Core                     --
+  ----------------------------------------------------------------------
+
+  cmp_xwb_tim_rcv_core : xwb_tim_rcv_core
   generic map (
-    g_navg_bits                            => c_dmtd_navg_width,
-    -- DDMTD deglitcher threshold (in clk_dmtd_i) clock cycles
-    g_deglitcher_threshold                 => c_dmtd_deglitch_thres,
-    -- Phase tag counter size (see dmtd_with_deglitcher.vhd for explanation)
-    g_counter_bits                         => c_dmtd_counter_bits
+    g_interface_mode                          => PIPELINED,
+    g_address_granularity                     => BYTE
   )
   port map (
-    -- resets
-    rst_sys_n_i                            => clk_sys_rstn,
-    rst_dmtd_n_i                           => clk_dmtd_rstn,
+    sys_rst_n_i                               => clk_sys_rstn,
+    dmtd_rst_n_i                              => clk_dmtd_rstn,
 
-    -- system clock
-    clk_sys_i                              => clk_sys,
+    -- System clock
+    sys_clk_i                                 => clk_sys,
     -- Input clocks
-    clk_a_i                                => clk_ref,
-    clk_b_i                                => clk_dmtd_b,
-    clk_dmtd_i                             => clk_dmtd,
+    dmtd_a_clk_i                              => clk_dmtd_a,
+    dmtd_b_clk_i                              => clk_dmtd_b,
+    dmtd_clk_i                                => clk_dmtd,
 
-    en_i                                   => std_logic'('1'),
+    -----------------------------
+    -- Wishbone Control Interface signals
+    -----------------------------
 
-    -- tag signals
-    tag_a_o                                => dmtd_tag_a,
-    tag_a_p_o                              => dmtd_tag_a_valid,
-    tag_b_o                                => dmtd_tag_b,
-    tag_b_p_o                              => dmtd_tag_b_valid,
+    wb_slv_i                                  => cbar_master_o(c_slv_tim_rcv_core_id),
+    wb_slv_o                                  => cbar_master_i(c_slv_tim_rcv_core_id),
 
-    navg_i                                 => dmtd_navg,
-    phase_raw_o                            => dmtd_phase_raw,
-    phase_raw_p_o                          => dmtd_phase_raw_valid,
-    phase_meas_o                           => dmtd_phase_meas,
-    phase_meas_p_o                         => dmtd_phase_meas_valid
+    -----------------------------
+    -- Tag Signals Interface
+    -----------------------------
+    tag_a_o                                   => dmtd_tag_a,
+    tag_a_p_o                                 => dmtd_tag_a_valid,
+    tag_b_o                                   => dmtd_tag_b,
+    tag_b_p_o                                 => dmtd_tag_b_valid,
+
+    phase_raw_o                               => dmtd_phase_raw,
+    phase_raw_p_o                             => dmtd_phase_raw_valid,
+    phase_meas_o                              => dmtd_phase_meas,
+    phase_meas_p_o                            => dmtd_phase_meas_valid
   );
 
-  clk_dmtd_a                               <= clk_ref;
+  clk_dmtd_a                                  <= clk_ref;
 
   ----------------------------------------------------------------------
   --                      AFC Diagnostics                             --
