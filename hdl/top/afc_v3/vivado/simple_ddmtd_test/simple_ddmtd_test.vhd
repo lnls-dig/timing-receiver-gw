@@ -805,12 +805,12 @@ begin
     -- 20 MHz input clock
     g_clkin_period                          => 50.000,
     g_divclk_divide                         => 1,
-    g_clkbout_mult_f                        => 57.500,
+    g_clkbout_mult_f                        => 50.000,
 
     -- 62.x MHz DMTD clock
-    g_clk0_divide_f                         => 18.5,
+    g_clk0_divide_f                         => 16.125,
     -- DMTD clock / 2
-    g_clk1_divide                           => 37
+    g_clk1_divide                           => 32
   )
   port map (
     rst_i                                   => '0',
