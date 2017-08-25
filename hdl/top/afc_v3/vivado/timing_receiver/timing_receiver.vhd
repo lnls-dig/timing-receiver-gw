@@ -177,7 +177,7 @@ architecture rtl of timing_receiver is
   constant c_slaves                         : natural := 9;
   -- Acq_Core 1, Acq_Core 2,
   -- TRIG Iface, TRIG MUX 1, TRIG MUX 2,
-  -- FMC active clock
+  -- AFC MGMT,
   -- Peripherals, AFC diagnostics,
   -- Repo URL, SDB synthesis top, general-cores, infra-cores, wr-cores
 
@@ -190,7 +190,7 @@ architecture rtl of timing_receiver is
   constant c_slv_trig_mux_0_id              : natural := 5;
   constant c_slv_trig_mux_1_id              : natural := 6;
   constant c_slv_tim_rcv_core_id            : natural := 7;
-  constant c_slv_active_clk_id              : natural := 8;
+  constant c_slv_afc_mgmt_id                : natural := 8;
 
   -- Not accounted iun the number of slaves as these are special
   constant c_slv_sdb_repo_url_id            : natural := 9;
@@ -320,8 +320,8 @@ architecture rtl of timing_receiver is
   -- General peripherals layout. UART, LEDs (GPIO), Buttons (GPIO) and Tics counter
   constant c_periph_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
 
-  -- FMC active clock. Si57x + AD9510
-  constant c_fmc_active_clk_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000300");
+  -- AFC MGMT
+  constant c_afc_mgmt_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
 
   -- WB SDB (Self describing bus) layout
   constant c_layout : t_sdb_record_array(c_slaves+5-1 downto 0) :=
@@ -335,8 +335,8 @@ architecture rtl of timing_receiver is
      c_slv_trig_mux_1_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00410000"),   -- Trigger Mux 2 port
      c_slv_tim_rcv_core_id     => f_sdb_embed_device(c_xwb_tim_rcv_core_regs_sdb,
                                                                                  x"00420000"),   -- Timing Receiver port
-     c_slv_active_clk_id       => f_sdb_embed_bridge(c_fmc_active_clk_bridge_sdb,
-                                                                                 x"00430000"),   -- FMC Active clock
+     c_slv_afc_mgmt_id         => f_sdb_embed_bridge(c_afc_mgmt_bridge_sdb,
+                                                                                 x"00430000"),   -- AFC MGMT
      c_slv_sdb_repo_url_id     => f_sdb_embed_repo_url(c_sdb_repo_url),
      c_slv_sdb_top_syn_id      => f_sdb_embed_synthesis(c_sdb_top_syn_info),
      c_slv_sdb_gen_cores_id    => f_sdb_embed_synthesis(c_sdb_general_cores_syn_info),
@@ -1507,14 +1507,13 @@ begin
   trig_dir_o <= trig_dir_int;
 
   ----------------------------------------------------------------------
-  --                            Active Clock                          --
+  --                            AFC MGMT                              --
   ----------------------------------------------------------------------
 
-  cmp_fmc_active_clk : xwb_fmc_active_clk
+  cmp_afc_mgmt : xwb_afc_mgmt
   generic map(
     g_address_granularity                    => BYTE,
-    g_interface_mode                         => PIPELINED,
-    g_with_extra_wb_reg                      => false
+    g_interface_mode                         => PIPELINED
   )
   port map (
     sys_clk_i                                => clk_sys,
@@ -1524,44 +1523,17 @@ begin
     -- Wishbone Control Interface signals
     -----------------------------
 
-    wb_slv_i                                 => cbar_master_o(c_slv_active_clk_id),
-    wb_slv_o                                 => cbar_master_i(c_slv_active_clk_id),
+    wb_slv_i                                 => cbar_master_o(c_slv_afc_mgmt_id),
+    wb_slv_o                                 => cbar_master_i(c_slv_afc_mgmt_id),
 
     -----------------------------
     -- External ports
     -----------------------------
 
-    -- Si571 clock gen
-    si571_scl_pad_b                          => afc_si57x_scl_b,
-    si571_sda_pad_b                          => afc_si57x_sda_b,
-    fmc_si571_oe_o                           => afc_si57x_oe_o,
-
-    -- AD9510 clock distribution PLL
-    spi_ad9510_cs_o                          => open,
-    spi_ad9510_sclk_o                        => open,
-    spi_ad9510_mosi_o                        => open,
-    spi_ad9510_miso_i                        => '0',
-
-    fmc_pll_function_o                       => open,
-    fmc_pll_status_i                         => '0',
-
-    -- AD9510 clock copy
-    fmc_fpga_clk_p_i                         => '0',
-    fmc_fpga_clk_n_i                         => '1',
-
-    -- Clock reference selection (TS3USB221)
-    fmc_clk_sel_o                            => open,
-
-    -----------------------------
-    -- General ADC output signals and status
-    -----------------------------
-
-    -- General board status
-    fmc_pll_status_o                         => open,
-
-    -- fmc_fpga_clk_*_i bypass signals
-    fmc_fpga_clk_p_o                         => open,
-    fmc_fpga_clk_n_o                         => open
+    -- Si57x clock gen
+    si57x_scl_pad_b                          => afc_si57x_scl_b,
+    si57x_sda_pad_b                          => afc_si57x_sda_b,
+    si57x_oe_o                               => afc_si57x_oe_o
   );
 
   ----------------------------------------------------------------------
