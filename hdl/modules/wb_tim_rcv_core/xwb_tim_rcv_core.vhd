@@ -43,6 +43,8 @@ generic
 (
   g_interface_mode                          : t_wishbone_interface_mode      := CLASSIC;
   g_address_granularity                     : t_wishbone_address_granularity := WORD;
+  g_clk_sys_freq                            : natural := 62500000; -- in Hz
+  g_freq_meas_counter_bits                  : natural := 28;
   g_dmtd_counter_bits                       : natural := 14
 );
 port
@@ -74,7 +76,12 @@ port
   phase_raw_o                               : out std_logic_vector(g_dmtd_counter_bits-1 downto 0);
   phase_raw_p_o                             : out std_logic;
   phase_meas_o                              : out std_logic_vector(31 downto 0);
-  phase_meas_p_o                            : out std_logic
+  phase_meas_p_o                            : out std_logic;
+
+  freq_dmtd_a_o                             : out std_logic_vector(g_freq_meas_counter_bits-1 downto 0);
+  freq_dmtd_a_valid_o                       : out std_logic;
+  freq_dmtd_b_o                             : out std_logic_vector(g_freq_meas_counter_bits-1 downto 0);
+  freq_dmtd_b_valid_o                       : out std_logic
 );
 end xwb_tim_rcv_core;
 

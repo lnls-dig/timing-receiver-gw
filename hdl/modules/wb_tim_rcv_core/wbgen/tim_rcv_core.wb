@@ -70,4 +70,64 @@ peripheral {
     };
   };
 
+  reg {
+      name = "Averaged Phase Difference Measurement";
+      prefix = "phase_meas";
+
+      field {
+        name = "Phase Difference";
+        prefix = "val";
+        type = SLV;
+        size = 32;
+        access_bus = READ_ONLY;
+        access_dev = WRITE_ONLY;
+      };
+  };
+
+  reg {
+      name = "DMTD A input clock Frequency";
+      prefix = "f_dmtd_a";
+
+      field {
+        name = "Frequency";
+        prefix = "freq";
+        type = SLV;
+        size = 28;
+        access_bus = READ_ONLY;
+        access_dev = WRITE_ONLY;
+      };
+
+      field {
+        name = "Valid";
+        prefix = "valid";
+        type = BIT;
+        access_bus = READ_WRITE;
+        access_dev = READ_WRITE;
+        load = LOAD_EXT;
+      };
+  };
+
+  reg {
+      name = "DMTD B input clock Frequency";
+      prefix = "f_dmtd_b";
+
+      field {
+        name = "Frequency";
+        prefix = "freq";
+        type = SLV;
+        size = 28;
+        access_bus = READ_ONLY;
+        access_dev = WRITE_ONLY;
+      };
+
+      field {
+        name = "Valid";
+        prefix = "valid";
+        type = BIT;
+        access_bus = READ_WRITE;
+        access_dev = READ_WRITE;
+        load = LOAD_EXT;
+      };
+  };
+
 };
