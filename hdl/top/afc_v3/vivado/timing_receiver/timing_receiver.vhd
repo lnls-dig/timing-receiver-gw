@@ -215,6 +215,7 @@ architecture rtl of timing_receiver is
   -- Acquisition core channel indexes
   constant c_acq_phase_raw_id               : natural := 0;
   constant c_acq_phase_meas_id              : natural := 1;
+  constant c_acq_freq_id                    : natural := 2;
 
   -- DDR3 Width
   constant c_acq_pos_ddr3_width             : natural := 32;
@@ -229,7 +230,7 @@ architecture rtl of timing_receiver is
   constant c_acq_core_1_id                  : natural := 1;
 
   -- Number of channels per acquisition core
-  constant c_acq_num_channels               : natural := 2; -- Phase raw / Phase meas
+  constant c_acq_num_channels               : natural := 3; -- Phase raw / Phase meas / Freq meas
   constant c_acq_width_u64                  : unsigned(c_acq_chan_cmplt_width_log2-1 downto 0) :=
                                                 to_unsigned(64, c_acq_chan_cmplt_width_log2);
   constant c_acq_width_u128                 : unsigned(c_acq_chan_cmplt_width_log2-1 downto 0) :=
@@ -256,13 +257,14 @@ architecture rtl of timing_receiver is
   constant c_facq_channels                  : t_facq_chan_param_array(c_acq_num_channels-1 downto 0) :=
   (
     c_acq_phase_raw_id    => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32),
-    c_acq_phase_meas_id   => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32)
+    c_acq_phase_meas_id   => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32),
+    c_acq_freq_id         => (width => c_acq_width_u64, num_atoms => c_acq_num_atoms_u2, atom_width => c_acq_atom_width_u32)
   );
 
   -- Trigger
   constant c_trig_sync_edge                 : string   := "positive";
   constant c_trig_trig_num                  : positive := 8; -- 8 MLVDS triggers
-  constant c_trig_intern_num                : positive := 2; -- 2 (Phase raw / Phase meas)
+  constant c_trig_intern_num                : positive := 3; -- 2 (Phase raw / Phase meas / Freq meas)
   constant c_trig_rcv_intern_num            : positive := 2; -- 2 Extra internal triggers
   constant c_trig_num_mux_interfaces        : natural  := c_acq_num_cores;
   constant c_trig_out_resolver              : string := "fanout";
@@ -315,6 +317,8 @@ architecture rtl of timing_receiver is
   constant c_clk_ext_fmc2_id                : natural := 0;
 
   -- DMTD constants
+  constant c_clk_sys_freq                   : natural := 62500000;
+  constant c_dmtd_freq_meas_counter_bits    : natural := 28;
   constant c_dmtd_counter_bits              : natural := 14;
 
   -- General peripherals layout. UART, LEDs (GPIO), Buttons (GPIO) and Tics counter
@@ -543,6 +547,11 @@ architecture rtl of timing_receiver is
   signal dmtd_phase_raw_valid               : std_logic;
   signal dmtd_phase_meas                    : std_logic_vector(31 downto 0);
   signal dmtd_phase_meas_valid              : std_logic;
+  signal dmtd_freq_a                        : std_logic_vector(c_dmtd_freq_meas_counter_bits-1 downto 0);
+  signal dmtd_freq_a_valid                  : std_logic;
+  signal dmtd_freq_b                        : std_logic_vector(c_dmtd_freq_meas_counter_bits-1 downto 0);
+  signal dmtd_freq_b_valid                  : std_logic;
+
 
   -- Chipscope control signals
   signal CONTROL0                           : std_logic_vector(35 downto 0);
@@ -1242,7 +1251,10 @@ begin
   cmp_xwb_tim_rcv_core : xwb_tim_rcv_core
   generic map (
     g_interface_mode                          => PIPELINED,
-    g_address_granularity                     => BYTE
+    g_address_granularity                     => BYTE,
+    g_clk_sys_freq                            => c_clk_sys_freq,
+    g_freq_meas_counter_bits                  => c_dmtd_freq_meas_counter_bits,
+    g_dmtd_counter_bits                       => c_dmtd_counter_bits
   )
   port map (
     sys_rst_n_i                               => clk_sys_rstn,
@@ -1273,7 +1285,12 @@ begin
     phase_raw_o                               => dmtd_phase_raw,
     phase_raw_p_o                             => dmtd_phase_raw_valid,
     phase_meas_o                              => dmtd_phase_meas,
-    phase_meas_p_o                            => dmtd_phase_meas_valid
+    phase_meas_p_o                            => dmtd_phase_meas_valid,
+
+    freq_dmtd_a_o                             => dmtd_freq_a,
+    freq_dmtd_a_valid_o                       => dmtd_freq_a_valid,
+    freq_dmtd_b_o                             => dmtd_freq_b,
+    freq_dmtd_b_valid_o                       => dmtd_freq_b_valid
   );
 
   clk_dmtd_a                                  <= clk_ref;
@@ -1335,6 +1352,13 @@ begin
   acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
   acq_chan_array(c_acq_core_0_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_phase_meas_id).pulse;
 
+  --------------------
+  -- DMTD 1 data, Freq Meas
+  --------------------
+  acq_chan_array(c_acq_core_0_id, c_acq_freq_id).val            <= std_logic_vector(resize(signed(dmtd_freq_a), 64));
+  acq_chan_array(c_acq_core_0_id, c_acq_freq_id).dvalid         <= dmtd_freq_a_valid;
+  acq_chan_array(c_acq_core_0_id, c_acq_freq_id).trig           <= trig_pulse_rcv(c_trig_mux_0_id, c_acq_freq_id).pulse;
+
   -- FIXME: For now, this acquisition core is the same as the other, but
   -- it's placed here so can use another FMC and use this core for it.
   --------------------
@@ -1350,6 +1374,13 @@ begin
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).val      <= std_logic_vector(resize(signed(dmtd_phase_meas), 64));
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).dvalid   <= dmtd_phase_meas_valid;
   acq_chan_array(c_acq_core_1_id, c_acq_phase_meas_id).trig     <= trig_pulse_rcv(c_trig_mux_1_id, c_acq_phase_meas_id).pulse;
+
+  --------------------
+  -- DMTD 2 data, Freq Meas
+  --------------------
+  acq_chan_array(c_acq_core_1_id, c_acq_freq_id).val            <= std_logic_vector(resize(signed(dmtd_freq_b), 64));
+  acq_chan_array(c_acq_core_1_id, c_acq_freq_id).dvalid         <= dmtd_freq_b_valid;
+  acq_chan_array(c_acq_core_1_id, c_acq_freq_id).trig           <= trig_pulse_rcv(c_trig_mux_1_id, c_acq_freq_id).pulse;
 
   cmp_xwb_facq_core_mux : xwb_facq_core_mux
   generic map
