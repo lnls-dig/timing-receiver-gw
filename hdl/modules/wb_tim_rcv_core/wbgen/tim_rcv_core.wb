@@ -7,12 +7,11 @@ peripheral {
 
   reg {
     name = "Phase Measurement Control register";
-    prefix = "phase_meas_ctl1";
+    prefix = "phase_meas_navg";
 
     field {
       name = "Number of phase measurement averages";
       description = "Number of phase measurement averages";
-      prefix = "navg";
       type = SLV;
       size = 32;
       access_bus = READ_WRITE;

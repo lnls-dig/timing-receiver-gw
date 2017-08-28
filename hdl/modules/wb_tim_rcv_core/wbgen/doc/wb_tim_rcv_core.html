@@ -67,13 +67,13 @@ C prefix
 REG
 </td>
 <td >
-<A href="#PHASE_MEAS_CTL1">Phase Measurement Control register</a>
+<A href="#PHASE_MEAS_NAVG">Phase Measurement Control register</a>
 </td>
 <td  class="td_code">
-tim_rcv_core_phase_meas_ctl1
+tim_rcv_core_phase_meas_navg
 </td>
 <td  class="td_code">
-PHASE_MEAS_CTL1
+PHASE_MEAS_NAVG
 </td>
 </tr>
 <tr class="tr_even">
@@ -193,7 +193,7 @@ clk_sys_i
 
 </td>
 <td  class="td_pblock_right">
-tim_rcv_core_phase_meas_ctl1_navg_o[31:0]
+tim_rcv_core_phase_meas_navg_o[31:0]
 </td>
 <td  class="td_arrow_right">
 &rArr;
@@ -593,7 +593,7 @@ tim_rcv_core_f_dmtd_b_valid_load_o
 </table>
 
 <h3><a name="sect_3_0">3. Register description</a></h3>
-<a name="PHASE_MEAS_CTL1"></a>
+<a name="PHASE_MEAS_NAVG"></a>
 <h3><a name="sect_3_1">3.1. Phase Measurement Control register</a></h3>
 <table cellpadding=0 cellspacing=0 border=0>
 <tr>
@@ -601,7 +601,7 @@ tim_rcv_core_f_dmtd_b_valid_load_o
 <b>HW prefix: </b>
 </td>
 <td  class="td_code">
-tim_rcv_core_phase_meas_ctl1
+tim_rcv_core_phase_meas_navg
 </td>
 </tr>
 <tr>
@@ -617,7 +617,7 @@ tim_rcv_core_phase_meas_ctl1
 <b>C prefix: </b>
 </td>
 <td  class="td_code">
-PHASE_MEAS_CTL1
+PHASE_MEAS_NAVG
 </td>
 </tr>
 <tr>
@@ -658,7 +658,7 @@ PHASE_MEAS_CTL1
 </tr>
 <tr>
 <td style="border: solid 1px black;" colspan=8  class="td_field">
-NAVG[31:24]
+PHASE_MEAS_NAVG[31:24]
 </td>
 <td >
 
@@ -712,7 +712,7 @@ NAVG[31:24]
 </tr>
 <tr>
 <td style="border: solid 1px black;" colspan=8  class="td_field">
-NAVG[23:16]
+PHASE_MEAS_NAVG[23:16]
 </td>
 <td >
 
@@ -766,7 +766,7 @@ NAVG[23:16]
 </tr>
 <tr>
 <td style="border: solid 1px black;" colspan=8  class="td_field">
-NAVG[15:8]
+PHASE_MEAS_NAVG[15:8]
 </td>
 <td >
 
@@ -820,7 +820,7 @@ NAVG[15:8]
 </tr>
 <tr>
 <td style="border: solid 1px black;" colspan=8  class="td_field">
-NAVG[7:0]
+PHASE_MEAS_NAVG[7:0]
 </td>
 <td >
 
@@ -847,7 +847,7 @@ NAVG[7:0]
 </table>
 <ul>
 <li><b>
-NAVG
+PHASE_MEAS_NAVG
 </b>[<i>read/write</i>]: Number of phase measurement averages
 <br>Number of phase measurement averages
 </ul>
