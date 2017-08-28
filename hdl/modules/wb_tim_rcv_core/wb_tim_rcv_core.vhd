@@ -302,7 +302,7 @@ begin
   -- To Wishbone Register Assignments
   regs_in.dmtd_a_ctl_reserved1_i            <= (others => '0');
   regs_in.dmtd_b_ctl_reserved1_i            <= (others => '0');
-  regs_in.phase_meas_val_i                  <= dmtd_phase_meas;
+  regs_in.phase_meas_i                      <= dmtd_phase_meas;
   regs_in.f_dmtd_a_freq_i                   <= freq_dmtd_a;
   regs_in.f_dmtd_a_valid_i                  <= freq_dmtd_a_valid_lvl;
   regs_in.f_dmtd_b_freq_i                   <= freq_dmtd_b;
