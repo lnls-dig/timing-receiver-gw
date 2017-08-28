@@ -75,7 +75,6 @@ peripheral {
 
       field {
         name = "Phase Difference";
-        prefix = "val";
         type = SLV;
         size = 32;
         access_bus = READ_ONLY;
