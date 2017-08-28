@@ -292,7 +292,7 @@ begin
   wb_slv_adp_in.rty                         <= '0';
 
   -- From Wishbone Register Assignments
-  dmtd_phase_meas_navg                      <= regs_out.phase_meas_ctl1_navg_o(dmtd_phase_meas_navg'length-1 downto 0);
+  dmtd_phase_meas_navg                      <= regs_out.phase_meas_navg_o(dmtd_phase_meas_navg'length-1 downto 0);
   dmtd_a_deglitch_threshold                 <= regs_out.dmtd_a_ctl_deglitcher_thres_o;
   dmtd_b_deglitch_threshold                 <= regs_out.dmtd_b_ctl_deglitcher_thres_o;
 
