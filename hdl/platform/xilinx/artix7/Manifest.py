@@ -1,6 +1,7 @@
 modules = {"local" : [
                         "ila",
-                        "vio"
+                        "vio",
+                        "pll"
                      ]
           }
 
