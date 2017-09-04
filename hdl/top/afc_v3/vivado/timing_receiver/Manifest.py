@@ -7,7 +7,9 @@ files = [ "timing_receiver.vhd",
 
 
 modules = { "local" :
-             ["../../../.."
+             ["../../../..",
+              "../../../../board/afc",
              ]
           };
+
 

@@ -483,10 +483,10 @@ set_property IOSTANDARD LVCMOS25                  [get_ports fmc1_la_p_i[33]]
 #set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_n_i]
 #set_property PACKAGE_PIN AA30                     [get_ports fmc2_clk0_m2c_p_i]
 #set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk0_m2c_p_i]
-set_property PACKAGE_PIN AG30                     [get_ports fmc2_clk1_m2c_n_i]
-set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_n_i]
-set_property PACKAGE_PIN AG29                     [get_ports fmc2_clk1_m2c_p_i]
-set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_p_i]
+#set_property PACKAGE_PIN AG30                     [get_ports fmc2_clk1_m2c_n_i]
+#set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_n_i]
+#set_property PACKAGE_PIN AG29                     [get_ports fmc2_clk1_m2c_p_i]
+#set_property IOSTANDARD LVDS_25                   [get_ports fmc2_clk1_m2c_p_i]
 
 set_property PACKAGE_PIN AM30                     [get_ports fmc2_ha_n_i[0] ]
 set_property IOSTANDARD LVCMOS25                  [get_ports fmc2_ha_n_i[0] ]
@@ -921,8 +921,6 @@ create_generated_clock -name clk_sys             [get_pins -hier -filter {NAME =
 set clk_sys_period                               [get_property PERIOD [get_clocks clk_sys]]
 create_generated_clock -name clk_200mhz          [get_pins -hier -filter {NAME =~ *cmp_pll_sys_inst/cmp_sys_pll/CLKOUT1}]
 set clk_200mhz_period                            [get_property PERIOD [get_clocks clk_200mhz]]
-create_generated_clock -name clk_300mhz          [get_pins -hier -filter {NAME =~ *cmp_pll_sys_inst/cmp_sys_pll/CLKOUT2}]
-set clk_300mhz_period                            [get_property PERIOD [get_clocks clk_300mhz]]
 
 # 20 MHz VCXO input clock
 create_clock -period 50.000 -name dmtd_clk_i     [get_ports clk_20m_vcxo_p_i]
@@ -930,8 +928,6 @@ create_clock -period 50.000 -name dmtd_clk_i     [get_ports clk_20m_vcxo_p_i]
 # Create generated clocks from DMTD PLL/MMCM
 create_generated_clock -name clk_dmtd            [get_pins -hier -filter {NAME =~ *cmp_dmtd_pll_inst/cmp_sys_pll/CLKOUT0}]
 set clk_dmtd_period                              [get_property PERIOD [get_clocks clk_dmtd]]
-create_generated_clock -name clk_dmtd_div2       [get_pins -hier -filter {NAME =~ *cmp_dmtd_pll_inst/cmp_sys_pll/CLKOUT1}]
-set clk_dmtd_div2_period                         [get_property PERIOD [get_clocks clk_dmtd_div2]]
 
 # 125 MHz Si57x input clock
 create_clock -period 8.000 -name clk_afc_si57x   [get_ports clk_afc_si57x_p_i]
@@ -941,13 +937,13 @@ set clk_afc_si57x_period                         [get_property PERIOD [get_clock
 create_clock -period 8.000 -name clk_ref         [get_ports fmc1_clk1_m2c_p_i]
 set clk_ref_period                               [get_property PERIOD [get_clocks clk_ref]]
 
-# 125 MHz Reference input clock
-create_clock -period 8.000 -name clk_ext_fmc2    [get_ports fmc2_clk1_m2c_p_i]
-set clk_ext_fmc2_period                          [get_property PERIOD [get_clocks clk_ext_fmc2]]
+## 125 MHz Reference input clock
+#create_clock -period 8.000 -name clk_ext_fmc2    [get_ports fmc2_clk1_m2c_p_i]
+#set clk_ext_fmc2_period                          [get_property PERIOD [get_clocks clk_ext_fmc2]]
 
 # We only use si57x or the clk_ext_fmc2. So it's safe to declare them
 # mutually exclusive
-set_clock_groups -logically_exclusive -group clk_afc_si57x -group clk_ext_fmc2
+#set_clock_groups -logically_exclusive -group clk_afc_si57x -group clk_ext_fmc2
 
 # DDR3 clock generate by IP
 set clk_pll_ddr_period                           [get_property PERIOD [get_clocks clk_pll_i]]
@@ -962,20 +958,15 @@ set_false_path -through                          [get_pins -hier -filter {NAME =
 set sys_reset_ffs                                [get_nets -hier -filter {NAME =~ *cmp_sys_reset*/master_rstn*}]
 set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $sys_reset_ffs]]]]
 
-set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_dmtd_reset/master_rstn_reg/C}]
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_si57x_reset/master_rstn_reg/C}]
 # Get the cell driving the corresponding net
-set dmtd_reset_ffs                               [get_nets -hier -filter {NAME =~ *cmp_dmtd_reset*/master_rstn*}]
-set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $dmtd_reset_ffs]]]]
+set si57x_reset_ffs                              [get_nets -hier -filter {NAME =~ *cmp_si57x_reset*/master_rstn*}]
+set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $si57x_reset_ffs]]]]
 
-set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_afc_si57x_reset/master_rstn_reg/C}]
+set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_sys_pcie_reset/master_rstn_reg/C}]
 # Get the cell driving the corresponding net
-set afc_si57x_reset_ffs                          [get_nets -hier -filter {NAME =~ *cmp_afc_si57x_reset*/master_rstn*}]
-set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $afc_si57x_reset_ffs]]]]
-
-set_false_path -through                          [get_pins -hier -filter {NAME =~ *cmp_ref_clk_reset/master_rstn_reg/C}]
-# Get the cell driving the corresponding net
-set ref_clk_reset_ffs                            [get_nets -hier -filter {NAME =~ *cmp_ref_clk_reset*/master_rstn*}]
-set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $ref_clk_reset_ffs]]]]
+set sys_pcie_reset_ffs                           [get_nets -hier -filter {NAME =~ *cmp_sys_pcie_reset*/master_rstn*}]
+set_property ASYNC_REG TRUE                      [get_cells [all_fanin -flat -only_cells -startpoints_only [get_pins -of_objects [get_nets $sys_pcie_reset_ffs]]]]
 
 # DDR 3 temperature monitor reset path
 # chain of FFs synched with clk_sys.
@@ -1012,14 +1003,14 @@ set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_
 set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
 set_max_delay -from                              [get_clocks clk_ref] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ref_period
 
-# DMTD EXT_FMC2_CLK Sampling.
-# Give 1x the source clock
-set_max_delay -datapath_only -from               [get_clocks clk_ext_fmc2] -to [get_clocks clk_dmtd] $clk_ext_fmc2_period
-set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_clocks clk_ext_fmc2] $clk_dmtd_period
-# Why does this do not get set by
-#  the above constraints?
-set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
-set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
+## DMTD EXT_FMC2_CLK Sampling.
+## Give 1x the source clock
+#set_max_delay -datapath_only -from               [get_clocks clk_ext_fmc2] -to [get_clocks clk_dmtd] $clk_ext_fmc2_period
+#set_max_delay -datapath_only -from               [get_clocks clk_dmtd] -to [get_clocks clk_ext_fmc2] $clk_dmtd_period
+## Why does this do not get set by
+##  the above constraints?
+#set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_A/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
+#set_max_delay -from                              [get_clocks clk_ext_fmc2] -to [get_pins -hier -filter {NAME =~*/DMTD_B/gen_straight.clk_i_d0_reg/D}] $clk_ext_fmc2_period
 
 # PCIe <-> DDR3. Give 1x the source clock
 set_max_delay -from                              [get_clocks clk_pll_i] -to [get_clocks clk_125mhz] $clk_pll_ddr_period

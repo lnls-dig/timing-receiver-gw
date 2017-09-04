@@ -6,8 +6,7 @@
 -- Created    : 2017-08-03
 -- Platform   : FPGA-generic
 -------------------------------------------------------------------------------
--- Description: This design is a simple DDMTD test to compare phases between a
--- stable 20MHz clock reference with an input clock from the FMC connectors
+-- Description: Top-level design of a timing receiver
 -------------------------------------------------------------------------------
 -- Copyright (c) 2017 CNPEM
 -- Licensed under GNU Lesser General Public License (LGPL) v3.0
@@ -45,12 +44,16 @@ use work.ipcores_pkg.all;
 use work.trigger_pkg.all;
 -- Timing Receiver Modules
 use work.tim_rcv_pkg.all;
--- Timing Receiver
-use work.tim_rcv_core_pkg.all;
 -- Meta Package
 use work.synthesis_descriptor_pkg.all;
 -- AXI cores
 use work.pcie_cntr_axi_pkg.all;
+-- Xilinx package
+use work.tr_xilinx_pkg.all;
+-- AFC package
+use work.tr_afc_pkg.all;
+-- TR Common package
+use work.xtr_board_pkg.all;
 
 entity timing_receiver is
 port(
@@ -189,7 +192,7 @@ architecture rtl of timing_receiver is
   constant c_slv_trig_iface_id              : natural := 4;
   constant c_slv_trig_mux_0_id              : natural := 5;
   constant c_slv_trig_mux_1_id              : natural := 6;
-  constant c_slv_tim_rcv_core_id            : natural := 7;
+  constant c_slv_tim_subsys_id              : natural := 7;
   constant c_slv_afc_mgmt_id                : natural := 8;
 
   -- Not accounted iun the number of slaves as these are special
@@ -297,25 +300,6 @@ architecture rtl of timing_receiver is
   -- Number of reset clock cycles (FF)
   constant c_button_rst_width               : natural := 255;
 
-  -- Number of top level clocks
-  constant c_num_tlvl_clks                  : natural := 3; -- CLK_SYS and CLK_200 MHz and CLK_300 MHz
-  constant c_clk_sys_id                     : natural := 0;
-  constant c_clk_200mhz_id                  : natural := 1;
-  constant c_clk_300mhz_id                  : natural := 2;
-
-  constant c_num_dmtd_clks                  : natural := 2; -- CLK_DMTD and CLK_DMTD_DIV2
-  constant c_clk_dmtd_id                    : natural := 0;
-  constant c_clk_dmtd_div2_id               : natural := 1;
-
-  constant c_num_afc_si57x_clks             : natural := 1; -- CLK_SI57X
-  constant c_clk_afc_si57x_id               : natural := 0;
-
-  constant c_num_ref_clk_clks               : natural := 1; -- CLK_REF
-  constant c_clk_ref_id                     : natural := 0;
-
-  constant c_num_ext_fmc2_clk_clks          : natural := 1; -- CLK_EXT_FMC2
-  constant c_clk_ext_fmc2_id                : natural := 0;
-
   -- DMTD constants
   constant c_clk_sys_freq                   : natural := 62500000;
   constant c_dmtd_freq_meas_counter_bits    : natural := 28;
@@ -327,6 +311,9 @@ architecture rtl of timing_receiver is
   -- AFC MGMT
   constant c_afc_mgmt_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"00000FFF", x"00000400");
 
+  -- Timing Subsystem
+  constant c_tim_subsys_bridge_sdb : t_sdb_bridge := f_xwb_bridge_manual_sdb(x"0000FFFF", x"00006000");
+
   -- WB SDB (Self describing bus) layout
   constant c_layout : t_sdb_record_array(c_slaves+5-1 downto 0) :=
   (
@@ -337,7 +324,7 @@ architecture rtl of timing_receiver is
      c_slv_trig_iface_id       => f_sdb_embed_device(c_xwb_trigger_iface_sdb,    x"00390000"),   -- Trigger Interface port
      c_slv_trig_mux_0_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00400000"),   -- Trigger Mux 1 port
      c_slv_trig_mux_1_id       => f_sdb_embed_device(c_xwb_trigger_mux_sdb,      x"00410000"),   -- Trigger Mux 2 port
-     c_slv_tim_rcv_core_id     => f_sdb_embed_device(c_xwb_tim_rcv_core_regs_sdb,
+     c_slv_tim_subsys_id     => f_sdb_embed_bridge(c_tim_subsys_bridge_sdb,
                                                                                  x"00420000"),   -- Timing Receiver port
      c_slv_afc_mgmt_id         => f_sdb_embed_bridge(c_afc_mgmt_bridge_sdb,
                                                                                  x"00430000"),   -- AFC MGMT
@@ -360,30 +347,10 @@ architecture rtl of timing_receiver is
   signal acq_core_slave_o                   : t_wishbone_slave_out_array(c_acq_num_cores-1 downto 0);
 
   -- PCIe signals
-  signal wb_ma_pcie_ack_in                  : std_logic;
-  signal wb_ma_pcie_dat_in                  : std_logic_vector(63 downto 0);
-  signal wb_ma_pcie_addr_out                : std_logic_vector(28 downto 0);
-  signal wb_ma_pcie_dat_out                 : std_logic_vector(63 downto 0);
-  signal wb_ma_pcie_we_out                  : std_logic;
-  signal wb_ma_pcie_stb_out                 : std_logic;
-  signal wb_ma_pcie_sel_out                 : std_logic;
-  signal wb_ma_pcie_cyc_out                 : std_logic;
-
   signal wb_ma_pcie_rst                     : std_logic;
   signal wb_ma_pcie_rstn                    : std_logic;
-  signal wb_ma_pcie_rstn_sync               : std_logic;
-
-  signal wb_ma_sladp_pcie_ack_in            : std_logic;
-  signal wb_ma_sladp_pcie_dat_in            : std_logic_vector(31 downto 0);
-  signal wb_ma_sladp_pcie_addr_out          : std_logic_vector(31 downto 0);
-  signal wb_ma_sladp_pcie_dat_out           : std_logic_vector(31 downto 0);
-  signal wb_ma_sladp_pcie_we_out            : std_logic;
-  signal wb_ma_sladp_pcie_stb_out           : std_logic;
-  signal wb_ma_sladp_pcie_sel_out           : std_logic_vector(3 downto 0);
-  signal wb_ma_sladp_pcie_cyc_out           : std_logic;
 
   -- PCIe Debug signals
-
   signal dbg_app_addr                       : std_logic_vector(31 downto 0);
   signal dbg_app_cmd                        : std_logic_vector(2 downto 0);
   signal dbg_app_en                         : std_logic;
@@ -398,9 +365,6 @@ architecture rtl of timing_receiver is
   signal dbg_app_wdf_rdy                    : std_logic;
   signal dbg_ddr_ui_clk                     : std_logic;
   signal dbg_ddr_ui_reset                   : std_logic;
-
-  signal dbg_arb_req                        : std_logic_vector(1 downto 0);
-  signal dbg_arb_gnt                        : std_logic_vector(1 downto 0);
 
   -- To/From Acquisition Core
   signal acq_chan_array                     : t_facq_chan_array2d(c_acq_num_cores-1 downto 0, c_acq_num_channels-1 downto 0);
@@ -417,79 +381,29 @@ architecture rtl of timing_receiver is
   signal dbg_ddr_rb_valid                   : std_logic;
 
   -- Clocks and resets signals
-  signal locked_sys                         : std_logic;
-  signal locked_dmtd                        : std_logic;
-  signal locked_dmtd_and_sys                : std_logic;
-  signal clk_sys_pcie_rstn                  : std_logic;
-  signal clk_sys_pcie_rst                   : std_logic;
-  signal clk_sys_rstn                       : std_logic;
-  signal clk_sys_rst                        : std_logic;
-  signal clk_200mhz_rst                     : std_logic;
-  signal clk_200mhz_rstn                    : std_logic;
-  signal clk_300mhz_rst                     : std_logic;
-  signal clk_300mhz_rstn                    : std_logic;
-  signal clk_dmtd_rstn                      : std_logic;
-  signal clk_dmtd_rst                       : std_logic;
-  signal clk_dmtd_div2_rstn                 : std_logic;
-  signal clk_dmtd_div2_rst                  : std_logic;
-  signal clk_afc_si57x_rstn                 : std_logic;
-  signal clk_afc_si57x_rst                  : std_logic;
-  signal clk_ref_rstn                       : std_logic;
-  signal clk_ref_rst                        : std_logic;
-  signal clk_ext_fmc2_rstn                  : std_logic;
-  signal clk_ext_fmc2_rst                   : std_logic;
-  signal clk_dmtd_b_rstn                    : std_logic;
-  signal clk_dmtd_b_rst                     : std_logic;
-
-  signal rst_button_sys_pp                  : std_logic;
-  signal rst_button_sys                     : std_logic;
-  signal rst_button_sys_n                   : std_logic;
-
-  -- "c_num_tlvl_clks" clocks
-  signal reset_clks_sys                     : std_logic_vector(c_num_tlvl_clks-1 downto 0);
-  signal reset_rstn_sys                     : std_logic_vector(c_num_tlvl_clks-1 downto 0);
-  signal reset_clks_dmtd                    : std_logic_vector(c_num_dmtd_clks-1 downto 0);
-  signal reset_rstn_dmtd                    : std_logic_vector(c_num_dmtd_clks-1 downto 0);
-  signal reset_clks_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
-  signal reset_rstn_afc_si57x               : std_logic_vector(c_num_afc_si57x_clks-1 downto 0);
-  signal reset_clks_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
-  signal reset_rstn_ref_clk                 : std_logic_vector(c_num_ref_clk_clks-1 downto 0);
-  signal reset_clks_ext_fmc2_clk            : std_logic_vector(c_num_ext_fmc2_clk_clks-1 downto 0);
-  signal reset_rstn_ext_fmc2_clk            : std_logic_vector(c_num_ext_fmc2_clk_clks-1 downto 0);
+  signal rst_sys_pcie_n                     : std_logic;
+  signal rst_sys_n                          : std_logic;
+  signal rst_sys                            : std_logic;
+  signal rst_ref_125m_n                     : std_logic;
+  signal rst_200m_n                         : std_logic;
+  signal rst_si57x_n                        : std_logic;
+  signal rst_si57x                          : std_logic;
 
   signal rs232_rstn                         : std_logic;
 
   -- System clocks
   signal clk_sys                            : std_logic;
-  signal clk_200mhz                         : std_logic;
-  signal clk_300mhz                         : std_logic;
+  signal clk_ref_125m                       : std_logic;
+  signal clk_si57x                          : std_logic;
+  signal clk_200m                           : std_logic;
 
   -- DMTD clocks
   signal clk_dmtd                           : std_logic;
-  signal clk_dmtd_div2                      : std_logic;
   signal clk_dmtd_a                         : std_logic;
   signal clk_dmtd_b                         : std_logic;
-  signal clk_dmtd_sel                       : std_logic;
-
-   -- Global Clock Single ended
-  signal sys_clk_gen                        : std_logic;
-  signal sys_clk_gen_bufg                   : std_logic;
-
-  signal dmtd_clk_gen                       : std_logic;
-  signal clk_20m_vcxo_ibufds                : std_logic;
-  signal clk_20m_vcxo_bufg                  : std_logic;
-
-  signal clk_afc_si57x_ibufds               : std_logic;
-  signal clk_afc_si57x_bufg                 : std_logic;
-  signal clk_afc_si57x                      : std_logic;
-
-  signal clk_ref_ibufds                     : std_logic;
-  signal clk_ref_bufg                       : std_logic;
-  signal clk_ref                            : std_logic;
-
-  signal clk_ext_fmc2_ibufds                : std_logic;
-  signal clk_ext_fmc2_bufg                  : std_logic;
-  signal clk_ext_fmc2                       : std_logic;
+  signal rst_dmtd_n                         : std_logic;
+  signal rst_dmtd_a_n                       : std_logic;
+  signal rst_dmtd_b_n                       : std_logic;
 
   -- FS clocks
   signal fs_clk_array                       : std_logic_vector(c_acq_num_cores-1 downto 0);
@@ -611,43 +525,6 @@ architecture rtl of timing_receiver is
   );
   end component;
 
-  -- Clock generation
-  component clk_gen is
-  port(
-    sys_clk_p_i                             : in std_logic;
-    sys_clk_n_i                             : in std_logic;
-    sys_clk_o                               : out std_logic;
-    sys_clk_bufg_o                          : out std_logic
-  );
-  end component;
-
-  -- Xilinx PLL
-  component sys_pll is
-  generic(
-    g_clkin_period                          : real := 5.000;
-    g_divclk_divide                         : integer := 1;
-    g_clkbout_mult_f                        : real := 5.000;
-
-    -- Reference jitter
-    g_ref_jitter                            : real := 0.010;
-
-    -- 100 MHz output clock
-    g_clk0_divide_f                         : real := 10.000;
-    -- 200 MHz output clock
-    g_clk1_divide                           : integer := 5;
-    -- 200 MHz output clock
-    g_clk2_divide                           : integer := 5
-  );
-  port(
-    rst_i                                   : in std_logic := '0';
-    clk_i                                   : in std_logic := '0';
-    clk0_o                                  : out std_logic;
-    clk1_o                                  : out std_logic;
-    clk2_o                                  : out std_logic;
-    locked_o                                : out std_logic
-  );
-  end component;
-
   -- Xilinx Chipscope Controller
   component chipscope_icon_1_port
   port (
@@ -675,358 +552,7 @@ architecture rtl of timing_receiver is
   );
   end component;
 
-  component dmtd_phase_meas_full
-  generic (
-    g_navg_bits           : integer := 12;
-    -- DDMTD deglitcher threshold (in clk_dmtd_i) clock cycles
-    g_deglitcher_threshold: integer;
-    -- Phase tag counter size (see dmtd_with_deglitcher.vhd for explanation)
-    g_counter_bits        : integer := 14);
-  port (
-    -- resets
-    rst_sys_n_i  : in std_logic;
-    rst_dmtd_n_i : in std_logic;
-
-    -- system clock
-    clk_sys_i  : in std_logic;
-    -- Input clocks
-    clk_a_i    : in std_logic;
-    clk_b_i    : in std_logic;
-    clk_dmtd_i : in std_logic;
-
-    en_i : in std_logic;
-
-    -- tag signals
-    tag_a_o        : out std_logic_vector(g_counter_bits-1 downto 0);
-    tag_a_p_o      : out std_logic;
-    tag_b_o        : out std_logic_vector(g_counter_bits-1 downto 0);
-    tag_b_p_o      : out std_logic;
-
-    navg_i         : in  std_logic_vector(g_navg_bits-1 downto 0);
-    phase_raw_o    : out std_logic_vector(g_counter_bits-1 downto 0);
-    phase_raw_p_o  : out std_logic;
-    phase_meas_o   : out std_logic_vector(31 downto 0);
-    phase_meas_p_o : out std_logic
-  );
-  end component;
-
-  -- Xilinx Chipscope Logic Analyser
-  -- Functions
-  -- Generate dummy (0) values
-  function f_zeros(size : integer)
-      return std_logic_vector is
-  begin
-      return std_logic_vector(to_unsigned(0, size));
-  end f_zeros;
-
 begin
-
-  ----------------------------------------------------------------------
-  --                      System Clock generation                     --
-  ----------------------------------------------------------------------
-
-  -- Clock generation for system clock
-  cmp_clk_sys_gen : clk_gen
-  port map (
-    sys_clk_p_i                             => sys_clk_p_i,
-    sys_clk_n_i                             => sys_clk_n_i,
-    sys_clk_o                               => sys_clk_gen,
-    sys_clk_bufg_o                          => sys_clk_gen_bufg
-  );
-
-   -- Obtain core locking and generate necessary clocks
-  cmp_pll_sys_inst : sys_pll
-  generic map (
-    -- 125.0 MHz input clock
-    g_clkin_period                          => 8.000,
-    g_divclk_divide                         => 1,
-    g_clkbout_mult_f                        => 8.000,
-
-    -- 100 MHz output clock
-    g_clk0_divide_f                         => 16.000,
-    -- 200 MHz output clock
-    g_clk1_divide                           => 5,
-    -- 300 MHz output clock
-    g_clk2_divide                           => 3
-  )
-  port map (
-    rst_i                                   => '0',
-    clk_i                                   => sys_clk_gen_bufg,
-    --clk_i                                   => sys_clk_gen,
-    clk0_o                                  => clk_sys,     -- 100MHz locked clock
-    clk1_o                                  => clk_200mhz,  -- 200MHz locked clock
-    clk2_o                                  => clk_300mhz,  -- 300MHz locked clock
-    locked_o                                => locked_sys        -- '1' when the PLL has locked
-  );
-
-  -- Reset synchronization. Hold reset line until few locked cycles have passed.
-  cmp_sys_reset : gc_reset
-  generic map(
-    g_clocks                                => c_num_tlvl_clks    -- CLK_SYS & CLK_200 & CLK_300
-  )
-  port map(
-    free_clk_i                              => sys_clk_gen_bufg,
-    locked_i                                => locked_sys,
-    clks_i                                  => reset_clks_sys,
-    rstn_o                                  => reset_rstn_sys
-  );
-
-  reset_clks_sys(c_clk_sys_id)              <= clk_sys;
-  reset_clks_sys(c_clk_200mhz_id)           <= clk_200mhz;
-  reset_clks_sys(c_clk_300mhz_id)           <= clk_300mhz;
-
-  -- Reset for PCIe core. Caution when resetting the PCIe core after the
-  -- initialization. The PCIe core needs to retrain the link and the PCIe
-  -- host (linux OS, likely) will not be able to do that automatically,
-  -- probably.
-  clk_sys_pcie_rstn                         <= reset_rstn_sys(c_clk_sys_id) and rst_button_sys_n;
-  clk_sys_pcie_rst                          <= not clk_sys_pcie_rstn;
-  -- Reset for all other modules
-  clk_sys_rstn                              <= reset_rstn_sys(c_clk_sys_id) and rst_button_sys_n and
-                                                  rs232_rstn and wb_ma_pcie_rstn_sync;
-  clk_sys_rst                               <= not clk_sys_rstn;
-  -- Reset synchronous to clk200mhz
-  clk_200mhz_rstn                           <= reset_rstn_sys(c_clk_200mhz_id);
-  clk_200mhz_rst                            <=  not(reset_rstn_sys(c_clk_200mhz_id));
-  -- Reset synchronous to clk300mhz
-  clk_300mhz_rstn                           <= reset_rstn_sys(c_clk_300mhz_id);
-  clk_300mhz_rst                            <=  not(reset_rstn_sys(c_clk_300mhz_id));
-
-  -- Generate button reset synchronous to each clock domain
-  -- Detect button positive edge of clk_sys
-  cmp_button_sys_ffs : gc_sync_ffs
-  port map (
-    clk_i                                   => clk_sys,
-    rst_n_i                                 => '1',
-    data_i                                  => sys_rst_button_n_i,
-    npulse_o                                => rst_button_sys_pp
-  );
-
-  -- Generate the reset signal based on positive edge
-  -- of synched gc
-  cmp_button_sys_rst : gc_extend_pulse
-  generic map (
-    g_width                                 => c_button_rst_width
-  )
-  port map(
-    clk_i                                   => clk_sys,
-    rst_n_i                                 => '1',
-    pulse_i                                 => rst_button_sys_pp,
-    extended_o                              => rst_button_sys
-  );
-
-  rst_button_sys_n                          <= not rst_button_sys;
-
-  ----------------------------------------------------------------------
-  --                      DMTD Clock generation                     --
-  ----------------------------------------------------------------------
-
-  cmp_ibufds_gte2_20m_vcxo : IBUFDS_GTE2
-  port map (
-    O                                       => clk_20m_vcxo_ibufds,
-    ODIV2                                   => open,
-    I                                       => clk_20m_vcxo_p_i,
-    IB                                      => clk_20m_vcxo_n_i,
-    CEB                                     => '0'
-  );
-
-  cmp_gte2_2m_vcxo_bufg : BUFG
-  port map(
-    O                                       => clk_20m_vcxo_bufg,
-    I                                       => clk_20m_vcxo_ibufds
-  );
-
-   -- Obtain core locking and generate necessary clocks
-  cmp_dmtd_pll_inst : sys_pll
-  generic map (
-    -- 20 MHz input clock
-    g_clkin_period                          => 50.000,
-    g_divclk_divide                         => 1,
-    g_clkbout_mult_f                        => 50.000,
-
-    -- 62.x MHz DMTD clock
-    g_clk0_divide_f                         => 16.125,
-    -- DMTD clock / 2
-    g_clk1_divide                           => 32
-  )
-  port map (
-    rst_i                                   => '0',
-    clk_i                                   => clk_20m_vcxo_bufg,
-    clk0_o                                  => clk_dmtd,
-    clk1_o                                  => clk_dmtd_div2,
-    locked_o                                => locked_dmtd      -- '1' when the PLL has locked
-  );
-
-  -- Reset synchronization. Hold reset line until few locked cycles have passed.
-  cmp_dmtd_reset : gc_reset
-  generic map(
-    g_clocks                                => c_num_dmtd_clks    -- CLK_SYS & CLK_200
-  )
-  port map(
-    free_clk_i                              => clk_20m_vcxo_bufg,
-    locked_i                                => locked_dmtd,
-    clks_i                                  => reset_clks_dmtd,
-    rstn_o                                  => reset_rstn_dmtd
-  );
-
-  reset_clks_dmtd(c_clk_dmtd_id)            <= clk_dmtd;
-  reset_clks_dmtd(c_clk_dmtd_div2_id)       <= clk_dmtd_div2;
-
-  -- Reset synchronous to clk_dmtd
-  clk_dmtd_rstn                             <= reset_rstn_dmtd(c_clk_dmtd_id);
-  clk_dmtd_rst                              <=  not(reset_rstn_dmtd(c_clk_dmtd_id));
-  -- Reset synchronous to clk_dmtd_div2
-  clk_dmtd_div2_rstn                        <= reset_rstn_dmtd(c_clk_dmtd_div2_id);
-  clk_dmtd_div2_rst                         <=  not(reset_rstn_dmtd(c_clk_dmtd_div2_id));
-
-
-  locked_dmtd_and_sys <= locked_dmtd and locked_sys;
-
-  ----------------------------------------------------------------------
-  --                      Si57x Clock generation                      --
-  ----------------------------------------------------------------------
-
-  cmp_ibufds_gte2_si57x : IBUFDS_GTE2
-  port map (
-    O                                       => clk_afc_si57x_ibufds,
-    ODIV2                                   => open,
-    I                                       => clk_afc_si57x_p_i,
-    IB                                      => clk_afc_si57x_n_i,
-    CEB                                     => '0'
-  );
-
-  cmp_gte2_si57x_bufg : BUFG
-  port map(
-    O                                       => clk_afc_si57x_bufg,
-    I                                       => clk_afc_si57x_ibufds
-  );
-
-  clk_afc_si57x                             <= clk_afc_si57x_bufg;
-
-  -- Reset synchronization. Hold reset line until few locked cycles have passed.
-  cmp_afc_si57x_reset : gc_reset
-  generic map(
-    g_clocks                                => c_num_afc_si57x_clks
-  )
-  port map(
-    free_clk_i                              => clk_afc_si57x_bufg,
-    locked_i                                => locked_dmtd_and_sys,
-    clks_i                                  => reset_clks_afc_si57x,
-    rstn_o                                  => reset_rstn_afc_si57x
-  );
-
-  reset_clks_afc_si57x(c_clk_afc_si57x_id)  <= clk_afc_si57x;
-
-  -- Reset synchronous to clk_afc_si57x
-  clk_afc_si57x_rstn                        <= reset_rstn_afc_si57x(c_clk_afc_si57x_id);
-  clk_afc_si57x_rst                         <=  not(reset_rstn_afc_si57x(c_clk_afc_si57x_id));
-
-  ----------------------------------------------------------------------
-  --                  Reference Clock FMC 1 generation                --
-  ----------------------------------------------------------------------
-
-  cmp_ibufds_ref_clk : IBUFDS
-  generic map (
-    DIFF_TERM                               => TRUE
-  )
-  port map (
-    O                                       => clk_ref_ibufds,
-    I                                       => fmc1_clk1_m2c_p_i,
-    IB                                      => fmc1_clk1_m2c_n_i
-  );
-
-  cmp_ref_clk_bufg : BUFG
-  port map(
-    O                                       => clk_ref_bufg,
-    I                                       => clk_ref_ibufds
-  );
-
-  clk_ref                                   <= clk_ref_bufg;
-
-  -- Reset synchronization. Hold reset line until few locked cycles have passed.
-  cmp_ref_clk_reset : gc_reset
-  generic map(
-    g_clocks                                => c_num_ref_clk_clks
-  )
-  port map(
-    free_clk_i                              => clk_ref_bufg,
-    locked_i                                => locked_dmtd_and_sys,
-    clks_i                                  => reset_clks_ref_clk,
-    rstn_o                                  => reset_rstn_ref_clk
-  );
-
-  reset_clks_ref_clk(c_clk_ref_id)          <= clk_ref;
-
-  -- Reset synchronous to clk_ref
-  clk_ref_rstn                              <= reset_rstn_ref_clk(c_clk_ref_id);
-  clk_ref_rst                               <=  not(reset_rstn_ref_clk(c_clk_ref_id));
-
-  ----------------------------------------------------------------------
-  --                  External Clock FMC 2 generation                 --
-  ----------------------------------------------------------------------
-
-  cmp_ibufds_ext_fmc2_clk : IBUFDS
-  generic map (
-    DIFF_TERM                               => TRUE
-  )
-  port map (
-    O                                       => clk_ext_fmc2_ibufds,
-    I                                       => fmc2_clk1_m2c_p_i,
-    IB                                      => fmc2_clk1_m2c_n_i
-  );
-
-  cmp_ext_fmc2_clk_bufg : BUFG
-  port map(
-    O                                       => clk_ext_fmc2_bufg,
-    I                                       => clk_ext_fmc2_ibufds
-  );
-
-  clk_ext_fmc2                              <= clk_ext_fmc2_bufg;
-
-  -- Reset synchronization. Hold reset line until few locked cycles have passed.
-  cmp_ext_fmc2_clk_reset : gc_reset
-  generic map(
-    g_clocks                                => c_num_ext_fmc2_clk_clks
-  )
-  port map(
-    free_clk_i                              => clk_ext_fmc2_bufg,
-    locked_i                                => locked_dmtd_and_sys,
-    clks_i                                  => reset_clks_ext_fmc2_clk,
-    rstn_o                                  => reset_rstn_ext_fmc2_clk
-  );
-
-  reset_clks_ext_fmc2_clk(c_clk_ext_fmc2_id)
-                                            <= clk_ext_fmc2;
-
-  -- Reset synchronous to clk_ext_fmc2
-  clk_ext_fmc2_rstn                         <= reset_rstn_ext_fmc2_clk(c_clk_ext_fmc2_id);
-  clk_ext_fmc2_rst                          <=  not(reset_rstn_ext_fmc2_clk(c_clk_ext_fmc2_id));
-
-  ----------------------------------------------------------------------
-  --                            DMTD Clock B                          --
-  ----------------------------------------------------------------------
-
-  -- We can select between the Si57x or FMC2 external clock for DMTD clock
-  -- input. WARNING. DON'T USE clk_afc_si57x and clk_ext_fmc2 signals! Use only
-  -- clk_dmtd_b output!
-  --
-  -- If used, this timing path will not be analyzed as we have declared these
-  -- clocks as exclusive!
-  cmp_dmtd_b_bugmux : BUFGMUX
-  generic map (
-    CLK_SEL_TYPE                            => "SYNC"
-  )
-  port map (
-    O                                       => clk_dmtd_b,
-    I0                                      => clk_afc_si57x,
-    I1                                      => clk_ext_fmc2,
-    S                                       => clk_dmtd_sel
-  );
-
-  clk_dmtd_b_rstn                           <= clk_afc_si57x_rstn when clk_dmtd_sel = '0' else
-                                               clk_ext_fmc2_rstn;
-  clk_dmtd_b_rst                            <= clk_afc_si57x_rst when clk_dmtd_sel = '0' else
-                                               clk_ext_fmc2_rst;
 
   ----------------------------------------------------------------------
   --                        Wishbone Modules                          --
@@ -1044,7 +570,7 @@ begin
   )
   port map(
     clk_sys_i                               => clk_sys,
-    rst_n_i                                 => clk_sys_rstn,
+    rst_n_i                                 => rst_sys_n,
     -- Master connections (INTERCON is a slave)
     slave_i                                 => cbar_slave_i,
     slave_o                                 => cbar_slave_o,
@@ -1053,31 +579,9 @@ begin
     master_o                                => cbar_master_o
   );
 
-  -- The LM32 is master 0+1
-  --lm32_rstn                                 <= clk_sys_rstn;
-
-  --cmp_lm32 : xwb_lm32
-  --generic map(
-  --  g_profile                               => "medium_icache_debug"
-  --) -- Including JTAG and I-cache (no divide)
-  --port map(
-  --  clk_sys_i                               => clk_sys,
-  --  rst_n_i                                 => lm32_rstn,
-  --  irq_i                                   => lm32_interrupt,
-  --  dwb_o                                   => cbar_slave_i(0), -- Data bus
-  --  dwb_i                                   => cbar_slave_o(0),
-  --  iwb_o                                   => cbar_slave_i(1), -- Instruction bus
-  --  iwb_i                                   => cbar_slave_o(1)
-  --);
-
-  -- Interrupt '0' is Button(0).
-  -- Interrupts 31 downto 1 are disabled
-
-  --lm32_interrupt <= (0 => not buttons_i(0), others => '0');
-
-  ----------------------------------
-  --         PCIe Core            --
-  ----------------------------------
+  ----------------------------------------------------------------------
+  --                            PCIe Core                             --
+  ----------------------------------------------------------------------
 
   cmp_xwb_pcie_cntr : xwb_pcie_cntr
   generic map (
@@ -1110,11 +614,11 @@ begin
     pci_exp_txn_o                             => pci_exp_txn_o,
 
     -- Necessity signals
-    ddr_clk_i                                 => clk_200mhz,   --200 MHz DDR core clock (connect through BUFG or PLL)
-    ddr_rst_i                                 => clk_sys_rst,
+    ddr_clk_i                                 => clk_200m,   --200 MHz DDR core clock (connect through BUFG or PLL)
+    ddr_rst_i                                 => rst_sys,
     pcie_clk_p_i                              => pcie_clk_p_i, --100 MHz PCIe Clock (connect directly to input pin)
     pcie_clk_n_i                              => pcie_clk_n_i, --100 MHz PCIe Clock
-    pcie_rst_n_i                              => clk_sys_pcie_rstn, -- PCIe core reset
+    pcie_rst_n_i                              => rst_sys_pcie_n, -- PCIe core reset
 
     -- DDR memory controller interface --
     ddr_aximm_sl_aclk_o                       => ddr_aximm_clk,
@@ -1128,7 +632,7 @@ begin
     wb_clk_i                                  => clk_sys,
     -- Reset wishbone interface with the same reset as the other
     -- modules, including a reset coming from the PCIe itself.
-    wb_rst_i                                  => clk_sys_rst,
+    wb_rst_i                                  => rst_sys,
     wb_ma_i                                   => cbar_slave_o(c_ma_pcie_id),
     wb_ma_o                                   => cbar_slave_i(c_ma_pcie_id),
     -- Additional exported signals for instantiation
@@ -1137,17 +641,9 @@ begin
 
   wb_ma_pcie_rstn                             <= not wb_ma_pcie_rst;
 
-  cmp_pcie_reset_synch : reset_synch
-  port map
-  (
-    clk_i                                    => clk_sys,
-    arst_n_i                                 => wb_ma_pcie_rstn,
-    rst_n_o                                  => wb_ma_pcie_rstn_sync
-  );
-
-  ----------------------------------
-  --         RS232 Core            --
-  ----------------------------------
+  ----------------------------------------------------------------------
+  --                            RS232 Core                            --
+  ----------------------------------------------------------------------
   cmp_xwb_rs232_syscon : xwb_rs232_syscon
   generic map (
     g_ma_interface_mode                       => PIPELINED,
@@ -1156,7 +652,7 @@ begin
   port map(
     -- WISHBONE common
     wb_clk_i                                  => clk_sys,
-    wb_rstn_i                                 => clk_sys_rstn,
+    wb_rstn_i                                 => rst_sys_n,
 
     -- External ports
     rs232_rxd_i                               => rs232_rxd_i,
@@ -1187,7 +683,7 @@ begin
   )
   port map(
     clk_sys_i                                 => clk_sys,
-    rst_n_i                                   => clk_sys_rstn,
+    rst_n_i                                   => rst_sys_n,
 
     -- UART
     --uart_rxd_i                                => uart_rxd_i,
@@ -1225,7 +721,7 @@ begin
   port map
   (
     clk_i                                   => clk_dmtd,
-    rst_n_i                                 => clk_dmtd_rstn,
+    rst_n_i                                 => rst_dmtd_n,
 
     heartbeat_o                             => heartbeat_dmtd_led_int
   );
@@ -1237,7 +733,7 @@ begin
   port map
   (
     clk_i                                   => clk_dmtd_b,
-    rst_n_i                                 => clk_dmtd_b_rstn,
+    rst_n_i                                 => rst_dmtd_b_n,
 
     heartbeat_o                             => heartbeat_dmtd_b_led_int
   );
@@ -1248,35 +744,97 @@ begin
   --                         Timing Receiver Core                     --
   ----------------------------------------------------------------------
 
-  cmp_xwb_tim_rcv_core : xwb_tim_rcv_core
-  generic map (
+  cmp_xtr_board_afc : xtr_board_afc
+  generic map
+  (
     g_interface_mode                          => PIPELINED,
     g_address_granularity                     => BYTE,
+    g_ref_clock_input                         => "EXT",
     g_clk_sys_freq                            => c_clk_sys_freq,
     g_freq_meas_counter_bits                  => c_dmtd_freq_meas_counter_bits,
-    g_dmtd_counter_bits                       => c_dmtd_counter_bits
+    g_dmtd_counter_bits                       => c_dmtd_counter_bits,
+    g_simulation                              => 0
   )
-  port map (
-    sys_rst_n_i                               => clk_sys_rstn,
-    dmtd_rst_n_i                              => clk_dmtd_rstn,
+  port map
+  (
+    ---------------------------------------------------------------------------
+    -- Clocks/resets
+    ---------------------------------------------------------------------------
+    -- Reset input (active low, can be async)
+    areset_n_i                                => sys_rst_button_n_i,
+    -- Optional reset input active low with rising edge detection. Does not
+    -- reset PLLs.
+    areset_edge_n_i                           => wb_ma_pcie_rstn,
 
-    -- System clock
-    sys_clk_i                                 => clk_sys,
-    -- Input clocks
-    dmtd_a_clk_i                              => clk_dmtd_a,
-    dmtd_b_clk_i                              => clk_dmtd_b,
-    dmtd_clk_i                                => clk_dmtd,
+    -- 125 MHz general clock
+    clk_125m_p_i                              => sys_clk_p_i,
+    clk_125m_n_i                              => sys_clk_n_i,
 
-    -----------------------------
-    -- Wishbone Control Interface signals
-    -----------------------------
+    -- DMTD clock
+    clk_20m_vcxo_p_i                          => clk_20m_vcxo_p_i,
+    clk_20m_vcxo_n_i                          => clk_20m_vcxo_n_i,
 
-    wb_slv_i                                  => cbar_master_o(c_slv_tim_rcv_core_id),
-    wb_slv_o                                  => cbar_master_i(c_slv_tim_rcv_core_id),
+    -- Si57x clock
+    clk_si57x_p_i                             => clk_afc_si57x_p_i,
+    clk_si57x_n_i                             => clk_afc_si57x_n_i,
 
-    -----------------------------
+    ---- GTP clock
+    clk_125m_gtp_p_i                          => '0',
+    clk_125m_gtp_n_i                          => '1',
+
+    -- Optional External Reference clock (if g_ref_clock_input = "EXT")
+    clk_ext_ref_p_i                           => fmc1_clk1_m2c_p_i,
+    clk_ext_ref_n_i                           => fmc1_clk1_m2c_n_i,
+
+    -- 62.5MHz sys clock output
+    clk_sys_62m5_o                            => clk_sys,
+    -- 125MHz ref clock output
+    clk_ref_125m_o                            => clk_ref_125m,
+    -- 200MHz clock output
+    clk_200m_o                                => clk_200m,
+    -- DMTD 62.x offset clock
+    clk_dmtd_o                                => clk_dmtd,
+    -- Si57x clock output
+    clk_si57x_o                               => clk_si57x,
+    -- active low reset outputs, synchronous to 62m5
+    rst_sys_62m5_n_o                          => rst_sys_n,
+    -- active low reset output, synchronous to clocks 62m5 for PCIe
+    rst_62m5_pcie_n_o                         => rst_sys_pcie_n,
+    -- active low reset outputs, synchronous to 125m
+    rst_ref_125m_n_o                          => rst_ref_125m_n,
+    -- active low reset output, synchronous to clocks 200m
+    rst_200m_n_o                              => rst_200m_n,
+    -- active low reset output, synchronous to clocks dmtd
+    rst_dmtd_n_o                              => rst_dmtd_n,
+    -- active low reset output, synchronous to clock si57x
+    rst_si57x_n_o                             => rst_si57x_n,
+
+    ---------------------------------------------------------------------------
+    -- SFP I/O for transceiver and SFP management info
+    ---------------------------------------------------------------------------
+    sfp_txp_o                                 => open,
+    sfp_txn_o                                 => open,
+    sfp_rxp_i                                 => '0',
+    sfp_rxn_i                                 => '0',
+    sfp_det_i                                 => '1',
+    sfp_sda_i                                 => '0',
+    sfp_sda_o                                 => open,
+    sfp_scl_i                                 => '0',
+    sfp_scl_o                                 => open,
+    sfp_rate_select_o                         => open,
+    sfp_tx_fault_i                            => '0',
+    sfp_tx_disable_o                          => open,
+    sfp_los_i                                 => '0',
+
+    ---------------------------------------------------------------------------
+    -- External WB interface
+    ---------------------------------------------------------------------------
+    wb_slv_i                                 => cbar_master_o(c_slv_tim_subsys_id),
+    wb_slv_o                                 => cbar_master_i(c_slv_tim_subsys_id),
+
+    ---------------------------------------------------------------------------
     -- Tag Signals Interface
-    -----------------------------
+    ---------------------------------------------------------------------------
     tag_a_o                                   => dmtd_tag_a,
     tag_a_p_o                                 => dmtd_tag_a_valid,
     tag_b_o                                   => dmtd_tag_b,
@@ -1290,10 +848,25 @@ begin
     freq_dmtd_a_o                             => dmtd_freq_a,
     freq_dmtd_a_valid_o                       => dmtd_freq_a_valid,
     freq_dmtd_b_o                             => dmtd_freq_b,
-    freq_dmtd_b_valid_o                       => dmtd_freq_b_valid
+    freq_dmtd_b_valid_o                       => dmtd_freq_b_valid,
+
+    ---------------------------------------------------------------------------
+    -- Buttons, LEDs and PPS output
+    ---------------------------------------------------------------------------
+    led_act_o                                 => open,
+    led_link_o                                => open,
+    btn1_i                                    => '1',
+    btn2_i                                    => '1',
+    -- Link ok indication
+    link_ok_o                                 => open
   );
 
-  clk_dmtd_a                                  <= clk_ref;
+  rst_sys                                   <= not (rst_sys_n);
+
+  clk_dmtd_a                                <= clk_ref_125m;
+  clk_dmtd_b                                <= clk_si57x;
+  rst_dmtd_a_n                              <= rst_ref_125m_n;
+  rst_dmtd_b_n                              <= rst_si57x_n;
 
   ----------------------------------------------------------------------
   --                      AFC Diagnostics                             --
@@ -1306,7 +879,7 @@ begin
   )
   port map(
     sys_clk_i                                 => clk_sys,
-    sys_rst_n_i                               => clk_sys_rstn,
+    sys_rst_n_i                               => rst_sys_n,
 
     -- Fast SPI clock. Same as Wishbone clock.
     spi_clk_i                                 => clk_sys,
@@ -1408,7 +981,7 @@ begin
 
     -- Clock signals for Wishbone
     sys_clk_i                                 => clk_sys,
-    sys_rst_n_i                               => clk_sys_rstn,
+    sys_rst_n_i                               => rst_sys_n,
 
     -- From DDR3 Controller
     ext_clk_i                                 => ddr_aximm_clk,
@@ -1464,7 +1037,7 @@ begin
 
   fs_clk_array   <= (others => clk_sys);
   fs_ce_array    <= (others => '1');
-  fs_rst_n_array <= (others => clk_sys_rstn);
+  fs_rst_n_array <= (others => rst_sys_n);
 
   -- c_slv_acq_core_*_id is Wishbone slave index
   -- c_acq_core_*_id is Acquisition core index
@@ -1477,7 +1050,7 @@ begin
   --                          Trigger                                 --
   ----------------------------------------------------------------------
   trig_ref_clk <= clk_sys;
-  trig_ref_rst_n <= clk_sys_rstn;
+  trig_ref_rst_n <= rst_sys_n;
 
   cmp_xwb_trigger : xwb_trigger
   generic map (
@@ -1495,7 +1068,7 @@ begin
   )
   port map (
     clk_i                                     => clk_sys,
-    rst_n_i                                   => clk_sys_rstn,
+    rst_n_i                                   => rst_sys_n,
 
     ref_clk_i                                 => trig_ref_clk,
     ref_rst_n_i                               => trig_ref_rst_n,
@@ -1548,7 +1121,7 @@ begin
   )
   port map (
     sys_clk_i                                => clk_sys,
-    sys_rst_n_i                              => clk_sys_rstn,
+    sys_rst_n_i                              => rst_sys_n,
 
     -----------------------------
     -- Wishbone Control Interface signals
@@ -1604,13 +1177,11 @@ begin
   ----------------------------------------------------------------------
   --                                 VIO                              --
   ----------------------------------------------------------------------
-  cmp_vivado_vio : vio_64_width
-  port map (
-    clk                                          => clk_sys,
-    probe_out0                                   => trig_vio0_probe
-  );
-
-  clk_dmtd_sel                                   <= trig_vio0_probe(0);
+  --cmp_vivado_vio : vio_64_width
+  --port map (
+  --  clk                                          => clk_sys,
+  --  probe_out0                                   => trig_vio0_probe
+  --);
 
   ----------------------------------------------------------------------
   --                      Triggers Chipscope                          --
@@ -1788,7 +1359,7 @@ begin
   --TRIG_ILA1_2                               <= memc_cmd_addr_resized;
   --TRIG_ILA1_3(31 downto 30)                 <= (others => '0');
   --TRIG_ILA1_3(27 downto 0)                  <= ddr_aximm_rstn &
-  --                                               clk_200mhz_rstn &
+  --                                               rst_200m_n &
   --                                               memc_cmd_instr & -- std_logic_vector(2 downto 0);
   --                                               memc_cmd_en &
   --                                               memc_cmd_rdy &
@@ -1809,8 +1380,8 @@ begin
   --  TRIG3                                   => TRIG_ILA2_3
   --);
 
-  --TRIG_ILA2_0(5 downto 0)                   <= clk_sys_rst &
-  --                                              clk_sys_rstn &
+  --TRIG_ILA2_0(5 downto 0)                   <= rst_sys &
+  --                                              rst_sys_n &
   --                                              rst_button_sys_n &
   --                                              rst_button_sys &
   --                                              rst_button_sys_pp &
@@ -1890,7 +1461,7 @@ begin
   --TRIG_ILA4_2                               <= dbg_app_addr;
   --TRIG_ILA4_3(31 downto 30)                 <= (others => '0');
   --TRIG_ILA4_3(29 downto 0)                  <= ddr_aximm_rstn &
-  --                                               clk_200mhz_rstn &
+  --                                               rst_200m_n &
   --                                               dbg_app_cmd & -- std_logic_vector(2 downto 0);
   --                                               dbg_app_en &
   --                                               dbg_app_rdy &
