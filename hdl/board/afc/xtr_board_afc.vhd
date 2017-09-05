@@ -430,8 +430,7 @@ begin  -- architecture struct
 
   -- distribution of resets (already synchronized to their clock domains)
   rst_si57x_n                               <= rstlogic_rst_si57x_out(c_clk_si57x_id);
-
-  rst_si57x_n_o                             <= not (rst_si57x_n);
+  rst_si57x_n_o                             <= rst_si57x_n;
 
   -----------------------------------------------------------------------------
   -- The common board Timing Receiver core with GTP
