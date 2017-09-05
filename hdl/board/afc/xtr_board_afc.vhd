@@ -220,7 +220,6 @@ architecture struct of xtr_board_afc is
   signal clk_pll_200m                       : std_logic;
   signal clk_pll_dmtd                       : std_logic;
   signal clk_si57x                          : std_logic;
-  signal clk_ref                            : std_logic;
   signal pll_locked                         : std_logic;
 
   -- Reset logic
@@ -449,7 +448,7 @@ begin  -- architecture struct
     -- Clocks
     clk_sys_i                               => clk_pll_62m5,
     clk_dmtd_i                              => clk_pll_dmtd,
-    clk_ref_i                               => clk_ref,
+    clk_ref_i                               => clk_ref_125m,
     clk_si57x_i                             => clk_si57x,
     rst_n_i                                 => rst_62m5_n,
     rst_dmtd_n_i                            => rst_dmtd_n,
