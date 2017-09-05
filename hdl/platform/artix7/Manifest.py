@@ -1,6 +1,0 @@
-modules = {"local" : [
-                        "ila",
-                        "vio"
-                     ]
-          }
-
