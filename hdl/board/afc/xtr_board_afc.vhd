@@ -406,8 +406,7 @@ begin  -- architecture struct
 
   -- distribution of resets (already synchronized to their clock domains)
   rst_62m5_pcie_n                           <= rstlogic_rst_pcie_out(c_clk_pcie_id);
-
-  rst_62m5_pcie_n_o                         <= not (rst_62m5_pcie_n);
+  rst_62m5_pcie_n_o                         <= rst_62m5_pcie_n;
 
   -----------------------------------------------------------------------------
   -- Reset logic for Si57x
