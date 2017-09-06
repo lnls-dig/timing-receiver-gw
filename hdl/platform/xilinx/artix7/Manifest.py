@@ -6,7 +6,8 @@ files = [
 modules = {"local" : [
                         "ila",
                         "vio",
-                        "pll"
+                        "pll",
+                        "tr_gtp_phy"
                      ]
           }
 
