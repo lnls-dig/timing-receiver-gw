@@ -121,6 +121,9 @@ architecture struct of tr_gtp_wrapper is
   signal rx_usr_clk2                        : std_logic;
   signal rx_out_clk                         : std_logic;
 
+  signal common_usr_clk                     : std_logic;
+  signal common_usr_clk2                    : std_logic;
+
   signal gtp_data_valid_in                  : std_logic;
 
   -- DRP signals
@@ -263,10 +266,10 @@ architecture struct of tr_gtp_wrapper is
 begin
 
  -- Output User Clocks
-  rx_usr_clk_o                              <= rx_usr_clk;
-  rx_usr_clk2_o                             <= rx_usr_clk2;
-  tx_usr_clk_o                              <= tx_usr_clk;
-  tx_usr_clk2_o                             <= tx_usr_clk2;
+  rx_usr_clk_o                              <= common_usr_clk;
+  rx_usr_clk2_o                             <= common_usr_clk2;
+  tx_usr_clk_o                              <= common_usr_clk;
+  tx_usr_clk2_o                             <= common_usr_clk2;
 
   -----------------------------------------------------------------------------
   -- GTP CLK
@@ -289,6 +292,13 @@ begin
     GT0_REFCLK_OUT                          => gtp_ref_clk
   );
 
+  -- Use a single common reference for both RX/TX paths for same phase relationship
+  common_usr_clk                            <= rx_usr_clk;
+  common_usr_clk2                           <= rx_usr_clk2;
+
+  -----------------------------------------------------------------------------
+  -- GTP Transceiver design
+  -----------------------------------------------------------------------------
   cmp_gtp_wrap_rtx_init : gtp_wrap_rtx_init
   generic map
   (
@@ -323,8 +333,8 @@ begin
     GT0_RXCDRLOCK_OUT                       => open,
     ------------------ Receive Ports - FPGA RX Interface Ports -----------------
     GT0_RXDATA_OUT                          => rx_data_o,
-    GT0_RXUSRCLK_IN                         => rx_usr_clk,
-    GT0_RXUSRCLK2_IN                        => rx_usr_clk2,
+    GT0_RXUSRCLK_IN                         => common_usr_clk,
+    GT0_RXUSRCLK2_IN                        => common_usr_clk2,
     ------------------------ Receive Ports - RX AFE Ports ----------------------
     GT0_GTPRXN_IN                           => pad_rxn_i,
     GT0_GTPRXP_IN                           => pad_rxp_i,
@@ -349,8 +359,8 @@ begin
     GT0_TXUSERRDY_IN                        => tx_user_rdy_i,
     ------------------ Transmit Ports - FPGA TX Interface Ports ----------------
     GT0_TXDATA_IN                           => tx_data_i,
-    GT0_TXUSRCLK_IN                         => tx_usr_clk,
-    GT0_TXUSRCLK2_IN                        => tx_usr_clk2,
+    GT0_TXUSRCLK_IN                         => common_usr_clk,
+    GT0_TXUSRCLK2_IN                        => common_usr_clk2,
     ------------------ Transmit Ports - TX Buffer Bypass Ports -----------------
     GT0_TXPHALIGN_IN                        => tx_ph_align,
     GT0_TXPHALIGNDONE_OUT                   => open,
