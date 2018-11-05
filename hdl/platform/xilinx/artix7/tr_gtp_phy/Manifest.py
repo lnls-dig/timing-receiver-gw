@@ -8,7 +8,7 @@ files = [
             "gtp_wrap_rtx_rx_startup_fsm.vhd",
             "gtp_wrap_rtx_tx_startup_fsm.vhd",
             "gtp_wrap_rtx_rx_manual_phase_align.vhd",
-            "gtp_wrap_rtx_sync_block.vhd"
+            "gtp_wrap_rtx_sync_block.vhd",
             "gtp_wrap_rtx.vhd",
             "gtp_wrap_rtx_gtrxreset_seq.vhd",
             "gtp_wrap_rtx_rxpmarst_seq.vhd",
