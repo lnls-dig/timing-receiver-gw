@@ -189,7 +189,7 @@ begin  -- architecture rtl
     -----------------------------------------------------------------------------
     -- System PLLs
     -----------------------------------------------------------------------------
-    cmp_pll_sys_inst : sys_pll
+    cmp_pll_sys_inst : sys_pll_xilix
     generic map (
       -- 125.0 MHz input clock
       g_clkin_period                        => 8.000,
@@ -233,7 +233,7 @@ begin  -- architecture rtl
     );
 
      -- Obtain core locking and generate necessary clocks
-    cmp_dmtd_pll_inst : sys_pll
+    cmp_dmtd_pll_inst : sys_pll_xilix
     generic map (
       -- 20 MHz input clock
       g_clkin_period                        => 50.000,

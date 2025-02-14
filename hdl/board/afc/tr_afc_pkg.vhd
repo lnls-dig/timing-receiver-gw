@@ -164,8 +164,7 @@ package tr_afc_pkg is
     areset_edge_n_i                           : in  std_logic := '1';
 
     -- 125 MHz general clock
-    clk_125m_p_i                              : in std_logic;
-    clk_125m_n_i                              : in std_logic;
+    clk_125m_i                                : in std_logic;
 
     -- DMTD clock
     clk_20m_vcxo_p_i                          : in std_logic;

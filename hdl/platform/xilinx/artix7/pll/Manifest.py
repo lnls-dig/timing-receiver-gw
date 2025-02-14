@@ -1,3 +1,3 @@
 files = [
-          "sys_pll.vhd"
+          "sys_pll_xilix.vhd"
         ]

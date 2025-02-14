@@ -2,6 +2,7 @@
 
 modules = { "local": [
                 "modules",
+                "ip_cores/afc-gw",
                 "ip_cores/general-cores",
                 "ip_cores/wr-cores",
                 "ip_cores/infra-cores",

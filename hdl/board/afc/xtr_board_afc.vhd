@@ -92,8 +92,7 @@ port (
   areset_edge_n_i                           : in  std_logic := '1';
 
   -- 125 MHz general clock
-  clk_125m_p_i                              : in std_logic;
-  clk_125m_n_i                              : in std_logic;
+  clk_125m_i                                : in std_logic;
 
   -- DMTD clock
   clk_20m_vcxo_p_i                          : in std_logic;
@@ -210,9 +209,6 @@ architecture struct of xtr_board_afc is
   -- Signals
   -----------------------------------------------------------------------------
 
-  signal clk_125m_ibufgds                   : std_logic;
-  signal clk_125m_bufg                      : std_logic;
-
   -- PLLs, clocks
   signal clk_sys                            : std_logic;
   signal clk_pll_62m5                       : std_logic;
@@ -255,24 +251,6 @@ architecture struct of xtr_board_afc is
 
 begin  -- architecture struct
 
-  cmp_ibufgds_clk_125m : IBUFGDS
-  generic map (
-    DIFF_TERM                               => FALSE,
-    IBUF_LOW_PWR                            => TRUE,
-    IOSTANDARD                              => "DEFAULT"
-  )
-  port map (
-    O                                       => clk_125m_ibufgds,
-    I                                       => clk_125m_p_i,
-    IB                                      => clk_125m_n_i
-  );
-
-  cmp_bufg_clk_125m : BUFG
-  port map (
-    O                                       => clk_125m_bufg,
-    I                                       => clk_125m_ibufgds
-  );
-
   -----------------------------------------------------------------------------
   -- Platform-dependent part (PHY, PLLs, buffers, etc)
   -----------------------------------------------------------------------------
@@ -286,7 +264,7 @@ begin  -- architecture struct
     areset_n_i                              => areset_n_i,
 
     -- Clocks
-    clk_125m_i                              => clk_125m_bufg,
+    clk_125m_i                              => clk_125m_i,
     clk_20m_vcxo_p_i                        => clk_20m_vcxo_p_i,
     clk_20m_vcxo_n_i                        => clk_20m_vcxo_n_i,
     clk_si57x_p_i                           => clk_si57x_p_i,
@@ -354,7 +332,7 @@ begin  -- architecture struct
     g_clocks                                => c_num_tlvl_clks
   )
   port map (
-    free_clk_i                              => clk_125m_bufg,
+    free_clk_i                              => clk_125m_i,
     locked_i                                => rstlogic_arst_n,
     clks_i                                  => rstlogic_clk_in,
     rstn_o                                  => rstlogic_rst_out
@@ -397,7 +375,7 @@ begin  -- architecture struct
     g_clocks                                => c_num_pcie_clks
   )
   port map (
-    free_clk_i                              => clk_125m_bufg,
+    free_clk_i                              => clk_125m_i,
     locked_i                                => rstlogic_arst_pcie_n,
     clks_i                                  => rstlogic_clk_pcie_in,
     rstn_o                                  => rstlogic_rst_pcie_out
@@ -421,7 +399,7 @@ begin  -- architecture struct
     g_clocks                                => c_num_si57x_clks
   )
   port map (
-    free_clk_i                              => clk_125m_bufg,
+    free_clk_i                              => clk_125m_i,
     locked_i                                => rstlogic_arst_si57x_n,
     clks_i                                  => rstlogic_clk_si57x_in,
     rstn_o                                  => rstlogic_rst_si57x_out

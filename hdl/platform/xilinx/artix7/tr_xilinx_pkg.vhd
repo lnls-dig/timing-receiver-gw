@@ -14,7 +14,7 @@ package tr_xilinx_pkg is
   ---------------------------------------------------------------------------
 
   -- Xilinx PLL
-  component sys_pll is
+  component sys_pll_xilix is
   generic(
     g_clkin_period                          : real := 5.000;
     g_divclk_divide                         : integer := 1;

@@ -23,7 +23,7 @@ use UNISIM.vcomponents.all;
 library ieee;
 use ieee.std_logic_1164.all;
 
-entity sys_pll is
+entity sys_pll_xilix is
 generic(
   -- 200 MHz input clock
   g_clkin_period                            : real := 5.000;
@@ -48,9 +48,9 @@ port(
   clk2_o                                    : out std_logic;
   locked_o                                  : out std_logic
 );
-end sys_pll;
+end sys_pll_xilix;
 
-architecture syn of sys_pll is
+architecture syn of sys_pll_xilix is
 
   signal s_mmcm_fbin                        : std_logic;
   signal s_mmcm_fbout                       : std_logic;
