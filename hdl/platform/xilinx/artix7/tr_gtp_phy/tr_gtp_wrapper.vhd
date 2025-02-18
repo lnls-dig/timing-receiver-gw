@@ -372,7 +372,7 @@ begin
     ----------- Transmit Ports - TX Fabric Clock Output Control Ports ----------
     GT0_TXOUTCLK_OUT                        => tx_out_clk,
     GT0_TXOUTCLKFABRIC_OUT                  => open,
-    GT0_TXOUTCLKPCS_OUT                     => open
+    GT0_TXOUTCLKPCS_OUT                     => open,
     ------------- Transmit Ports - TX Initialization and Reset Ports -----------
     GT0_TXRESETDONE_OUT                     => open,
 
