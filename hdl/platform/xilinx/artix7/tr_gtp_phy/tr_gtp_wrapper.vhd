@@ -129,6 +129,7 @@ architecture struct of tr_gtp_wrapper is
   -- DRP signals
   signal drp_lock_det_clk                   : std_logic;
   signal drp_addr                           : std_logic_vector(8 downto 0);
+  signal drp_clk                            : std_logic;
   signal drp_di                             : std_logic_vector(15 downto 0);
   signal drp_do                             : std_logic_vector(15 downto 0);
   signal drp_en                             : std_logic;
