@@ -137,8 +137,8 @@ architecture struct of tr_gtp_wrapper is
   signal drp_we                             : std_logic;
 
   -- RX buffer bypass
-  signal rx_ph_monitor                      : std_logic;
-  signal rx_ph_slip_monitor                 : std_logic;
+  signal rx_ph_monitor                      : std_logic_vector(4 downto 0);
+  signal rx_ph_slip_monitor                 : std_logic_vector(4 downto 0);
   signal rx_ph_dly_rst                      : std_logic;
 
   -- RX slip/equalizer
