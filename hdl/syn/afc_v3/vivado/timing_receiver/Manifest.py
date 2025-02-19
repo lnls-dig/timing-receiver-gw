@@ -29,9 +29,15 @@ syn_properties = [
 
 import os
 import sys
+
+files = []
+
 if os.path.isfile("synthesis_descriptor_pkg.vhd"):
-    files = ["synthesis_descriptor_pkg.vhd"];
+    files.append("synthesis_descriptor_pkg.vhd");
 else:
     sys.exit("Generate the SDB descriptor before using HDLMake (./build_synthesis_sdb.sh)")
+
+# TCL commands file
+files.append("commands.tcl")
 
 modules = { "local" : [ "../../../../top/afc_v3/vivado/timing_receiver" ] };
